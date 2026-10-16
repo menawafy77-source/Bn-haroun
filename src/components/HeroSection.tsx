@@ -215,7 +215,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             >
               <video
                 ref={videoRef}
-                src={videoSrc}
+                key={videoSrc}
                 poster="/hero_haroun_coffee_1791931203817.jpg"
                 autoPlay
                 muted={isMuted}
@@ -224,7 +224,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 className="w-full h-full object-cover cursor-pointer"
                 onClick={togglePlay}
                 title="اضغط للتشغيل أو الإيقاف المؤقت"
-              />
+              >
+                <source src={videoSrc} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
 
               {/* Sound & Controls Floating Badges (فقط أزرار الصوت والتشغيل/الإيقاف بدون أي نصوص أو شعارات) */}
