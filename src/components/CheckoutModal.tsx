@@ -51,56 +51,63 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
-    setIsSubmitting(true);
+    const orderId = `ORD-${Date.now()}`;
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
+    const orderNumber = `HRN-${randomNum}`;
 
-    setTimeout(() => {
-      const randomNum = Math.floor(10000 + Math.random() * 90000);
-      const orderNumber = `HRN-${randomNum}`;
+    // 1. تجهيز بيانات الطلب ورسالة الواتساب
+    const message = `مرحباً بن هارون، أرغب في تأكيد طلبي:%0A` +
+      `• رقم الطلب: ${orderNumber}%0A` +
+      `• الاسم: ${customerName}%0A` +
+      `• الهاتف: ${customerPhone}%0A` +
+      `• ملاحظات: ${notes || 'لا يوجد'}%0A` +
+      `• الإجمالي: ${subtotal} ج.م`;
 
-      const earnedPoints = items
-        .filter((item) => !item.isLoyaltyReward)
-        .reduce((sum, item) => {
-          const pts = item.weight === '100g' ? 1 : 3;
-          return sum + pts * item.quantity;
-        }, 0);
+    // 2. تحويل العميل تلقائياً للواتساب
+    const whatsappUrl = `https://wa.me/201275075046?text=${message}`;
+    window.open(whatsappUrl, '_blank');
 
-      const newOrder: Order = {
-        id: `ORD-${Date.now()}`,
-        orderNumber,
-        date: new Intl.DateTimeFormat('ar-EG', { dateStyle: 'long' }).format(new Date()),
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
-        customerCity: '',
-        customerAddress: '',
-        items: [...items],
-        subtotal,
-        shippingFee: 0,
-        discount: 0,
-        pointsDiscount: 0,
-        total: grandTotal,
-        paymentMethod,
-        paymentStatus: paymentMethod === 'cod' ? 'pending' : 'verified',
-        status: 'placed',
-        statusStep: 1,
-        trackingCode: `EGY-${orderNumber}`,
-        carrier: 'شحن بن هارون السريع',
-        estimatedDelivery: 'تجهيز وتسليم فوري',
-        notes: notes.trim() || undefined,
-        pointsEarned: earnedPoints,
-        pointsCredited: false,
-        timeline: [],
-      };
+    // 3. حفظ الطلب في النظام
+    const earnedPoints = items
+      .filter((item) => !item.isLoyaltyReward)
+      .reduce((sum, item) => {
+        const pts = item.weight === '100g' ? 1 : 3;
+        return sum + pts * item.quantity;
+      }, 0);
 
-      setIsSubmitting(false);
-      setCompletedOrder(newOrder);
-      onOrderSuccess(newOrder);
+    const newOrder: Order = {
+      id: orderId,
+      orderNumber,
+      date: new Intl.DateTimeFormat('ar-EG', { dateStyle: 'long' }).format(new Date()),
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      customerCity: '',
+      customerAddress: '',
+      items: [...items],
+      subtotal,
+      shippingFee: 0,
+      discount: 0,
+      pointsDiscount: 0,
+      total: subtotal,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'verified',
+      status: 'placed',
+      statusStep: 1,
+      trackingCode: `EGY-${orderNumber}`,
+      carrier: 'شحن بن هارون السريع',
+      estimatedDelivery: 'تجهيز وتسليم فوري',
+      notes: notes.trim() || undefined,
+      pointsEarned: earnedPoints,
+      pointsCredited: false,
+      timeline: [],
+    };
+    onOrderSuccess(newOrder);
 
-      // Reset form
-      setCustomerName('');
-      setCustomerPhone('');
-      setNotes('');
-      onClose();
-    }, 1000);
+    // 4. مسح الخانات وإغلاق النافذة
+    setCustomerName('');
+    setCustomerPhone('');
+    setNotes('');
+    onClose();
   };
 
   const whatsappMessage = completedOrder
