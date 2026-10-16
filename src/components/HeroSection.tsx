@@ -10,7 +10,7 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreProducts,
 }) => {
-  const [videoSrc, setVideoSrc] = useState<string>('https://res.cloudinary.com/demo/video/upload/v1728945678/samples/haroun_coffee_promo.mp4');
+  const [videoSrc, setVideoSrc] = useState<string>('https://video.xx.fbcdn.net/v/t42.904-2/461413816_1223594832269896_4319524036662489953_n.mp4?_nc_cat=103&ccb=1-7&_nc_sid=fb5955&_nc_eui2=AeF0Qn4Q0k9-D-m2i5G4Vn7J_3u-85oF30z_e77zmgjftP5e3bH1tH4z4JvH6B1g-Y0c2r3yD2W32qR9rV6f6p2V&_nc_ohc=8xT69e9gX-MQ7kNvgH0_h2G&_nc_zt=23&_nc_ht=video.xx.fbcdn.net&_nc_gid=A_17n0B7V7tq0kKkX8S37n-&oh=00_AYB4fXoG3d0s0y-oU1Qx6r1-e40YmO1A5d5L_N2u1r3L7g&oe=67115E1D');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
