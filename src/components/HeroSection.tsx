@@ -9,7 +9,7 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreProducts,
 }) => {
-  const [videoSrc, setVideoSrc] = useState<string>('/videos/327928535_1792017843442688.mp4');
+  const [videoSrc, setVideoSrc] = useState<string>('/videos/ben_haroun_promo.mp4');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
