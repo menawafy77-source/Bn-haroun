@@ -14,6 +14,31 @@ export const Footer: React.FC<FooterProps> = ({
   onFooterLogoClick,
   isOwnerUnlocked = false,
 }) => {
+  const [logoClicks, setLogoClicks] = React.useState(0);
+  const clickTimerRef = React.useRef<any>(null);
+
+  const handleLogoClick = () => {
+    const nextClicks = logoClicks + 1;
+    setLogoClicks(nextClicks);
+
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+    }
+
+    if (nextClicks >= 3) {
+      setLogoClicks(0);
+      if (onFooterLogoClick) {
+        onFooterLogoClick();
+      } else if (onOpenOwnerDashboard) {
+        onOpenOwnerDashboard();
+      }
+    } else {
+      clickTimerRef.current = setTimeout(() => {
+        setLogoClicks(0);
+      }, 1500);
+    }
+  };
+
   return (
     <footer className="bg-[#1E120B] text-[#D8C7B5] pt-16 pb-8 border-t border-[#3E2723]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,15 +46,15 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Brand & Story */}
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              {/* Clickable Logo - Hidden Gateway for Shop Owner */}
+              {/* Clickable Logo - Hidden Gateway for Shop Owner (3 clicks) */}
               <button
                 type="button"
-                onClick={onFooterLogoClick || onOpenOwnerDashboard}
+                onClick={handleLogoClick}
                 className="w-13 h-13 rounded-full overflow-hidden p-0.5 bg-gradient-to-br from-[#C5A059] to-[#8C5E35] shadow-lg shrink-0 border border-[#C5A059]/40 hover:scale-110 active:scale-95 transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-[#C5A059]"
                 title={
                   isOwnerUnlocked
-                    ? 'المكتب · أستاذ ثروت الهارون'
-                    : 'المكتب (اضغط لإدخال الرقم السري PIN)'
+                    ? 'المكتب · ثروت هارون'
+                    : 'المكتب (اضغط 3 مرات متتالية)'
                 }
               >
                 <img
@@ -154,7 +179,7 @@ export const Footer: React.FC<FooterProps> = ({
                     className="text-[#F3C07B] hover:text-white transition-colors cursor-pointer font-bold flex items-center gap-1.5"
                   >
                     <i className="fa-solid fa-briefcase text-xs text-[#C5A059]"></i>
-                    <span>المكتب (أستاذ ثروت الهارون)</span>
+                    <span>المكتب (ثروت هارون)</span>
                   </button>
                 </li>
               )}

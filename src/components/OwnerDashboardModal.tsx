@@ -321,12 +321,12 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-2 md:p-4 bg-black/80 backdrop-blur-md animate-fadeIn overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn overflow-hidden">
       <div
-        className={`bg-[#FBF8F3] border-2 border-[#C5A059]/40 flex flex-col shadow-2xl transition-all duration-300 ${
+        className={`bg-[#FBF8F3] border-2 border-[#C5A059]/40 flex flex-col shadow-2xl transition-all duration-300 overflow-hidden ${
           isFullScreen
             ? 'w-full h-full rounded-none'
-            : 'rounded-2xl sm:rounded-3xl max-w-7xl w-full h-[98vh] sm:h-[94vh]'
+            : 'rounded-2xl sm:rounded-3xl max-w-7xl w-full max-h-[96vh] h-[96vh]'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -343,7 +343,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-amiri font-bold text-lg sm:text-2xl text-white leading-tight">
-                  المكتب · أستاذ ثروت الهارون
+                  المكتب · ثروت هارون
                 </h2>
                 <span className="bg-[#C5A059] text-[#2C1810] text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full">
                   مكتب الإدارة
@@ -363,7 +363,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                 setShowPasswordModal(true);
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3 sm:py-2 bg-gradient-to-r from-[#C5A059]/20 to-[#C5A059]/40 hover:from-[#C5A059]/40 hover:to-[#C5A059]/60 text-[#F3C07B] hover:text-white font-bold text-xs rounded-xl transition-all border border-[#C5A059]/60 shadow-sm cursor-pointer"
-              title="تغيير كلمة السر التي يسجل بها صاحب المحل (أستاذ ثروت الهارون) للدخول للمكتب"
+              title="تغيير كلمة السر التي يسجل بها صاحب المحل (ثروت هارون) للدخول للمكتب"
             >
               <i className="fa-solid fa-key text-xs text-[#C5A059]"></i>
               <span className="hidden sm:inline">تغيير كلمة السر</span>
@@ -422,7 +422,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           </div>
         </div>
 
-        {/* Welcome Message for Mr. Tharwat ("أهلاً أستاذ ثروت") */}
+        {/* Welcome Message for Mr. Tharwat ("أهلاً ثروت هارون") */}
         <div className="bg-gradient-to-r from-[#2C1810] via-[#3E2723] to-[#2C1810] px-4 py-3.5 sm:px-6 sm:py-4 border-b border-[#C5A059]/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shadow-inner shrink-0">
           <div className="flex items-center gap-3.5 w-full sm:w-auto">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#C5A059] to-[#8C5E35] p-0.5 shadow-md shrink-0 flex items-center justify-center border border-[#C5A059]">
@@ -431,7 +431,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg sm:text-2xl font-bold font-amiri text-[#F3C07B] tracking-wide">
-                  أهلاً أستاذ ثروت
+                  أهلاً ثروت هارون
                 </h3>
                 <span className="bg-[#C5A059] text-[#2C1810] text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs">
                   مرحباً بك في المكتب
@@ -457,7 +457,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
             </button>
             <div className="hidden md:flex items-center gap-2 bg-black/25 px-3.5 py-1.5 rounded-xl border border-[#C5A059]/30 text-xs text-[#EADBCE]">
               <i className="fa-solid fa-briefcase text-[#C5A059]"></i>
-              <span>مكتب أستاذ ثروت الهارون</span>
+              <span>مكتب ثروت هارون</span>
             </div>
           </div>
         </div>
@@ -616,13 +616,13 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                 <span className="text-xs">🏆</span>
               </div>
               <div>
-                <div className="text-lg sm:text-xl font-black text-amber-950 font-tajawal tabular-nums">
+                <h3 id="total-points-display" className="text-lg sm:text-xl font-black text-amber-950 font-tajawal tabular-nums">
                   {confirmedCustomerPoints}{' '}
                   <span className="text-[10px] font-bold text-amber-800">نقطة مؤكدة</span>
-                </div>
-                <span className="text-[10px] text-amber-900 block font-bold">
-                  {pendingCustomerPoints > 0 ? `⏳ ${pendingCustomerPoints} نقطة بانتظار التأكيد` : 'جميع النقاط معتمدة ✓'}
-                </span>
+                </h3>
+                <p className="text-[10px] text-amber-900 block font-bold m-0">
+                  {pendingCustomerPoints > 0 ? `⏳ ${pendingCustomerPoints} نقطة بانتظار التأكيد` : '✓ جميع النقاط معتمدة من الثروت هارون'}
+                </p>
               </div>
             </div>
           </div>
@@ -755,9 +755,88 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           </div>
         </div>
 
-        {/* Content Body: Orders List */}
+        {/* Content Body */}
         <div className="p-3 sm:p-5 overflow-y-auto flex-1">
-          {filteredOrders.length === 0 ? (
+          {activeTab === 'customers' ? (
+            /* Customers Directory Tab */
+            filteredCustomers.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-[#DECFBE] p-8">
+                <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-[#F4EBE1] flex items-center justify-center text-[#A89887] text-2xl">
+                  <i className="fa-solid fa-users"></i>
+                </div>
+                <h3 className="font-bold text-lg text-[#2C1810] mb-1">لا يوجد عملاء مطابِقون</h3>
+                <p className="text-xs text-[#8C7A6B] max-w-sm mx-auto">
+                  {searchTerm ? `لم نجد أي عميل مطابق لـ "${searchTerm}".` : 'لم يتم تسجيل عملاء بعد.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredCustomers.map((cust, cIdx) => (
+                  <div key={cIdx} className="bg-white rounded-2xl p-4 border border-[#D9CABB] shadow-sm flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#F0E6DC]">
+                        <div className="flex items-center gap-2">
+                          <div className="w-9 h-9 rounded-xl bg-[#F4EBE1] text-[#3E2723] flex items-center justify-center font-bold text-sm shrink-0">
+                            <i className="fa-solid fa-user-tie"></i>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-[#2C1810]">{cust.name}</h4>
+                            <span className="text-[10px] text-[#8C7A6B] block">آخر طلب: {cust.lastOrderDate}</span>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-950 font-mono">
+                          {cust.totalOrders} طلب
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between bg-[#FAF8F3] p-2 rounded-xl border border-[#EADBCE]">
+                          <span className="text-[#8C7A6B]">رقم الهاتف:</span>
+                          <bdi dir="ltr" className="font-mono font-bold text-[#2C1810] select-all">{cust.phone}</bdi>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-[#FAF8F3] p-2 rounded-xl border border-[#EADBCE]">
+                          <span className="text-[#8C7A6B]">إجمالي المشتريات:</span>
+                          <span className="font-bold text-[#8C5E35] font-tajawal">{cust.totalSpent.toLocaleString('ar-EG')} جنيه</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-amber-50 p-2 rounded-xl border border-amber-200">
+                          <span className="text-amber-900 font-bold">نقاط الولاء (المعتمدة):</span>
+                          <span className="font-black text-amber-950 font-tajawal">{cust.confirmedPoints} نقطة</span>
+                        </div>
+                        {cust.pendingPoints > 0 && (
+                          <div className="flex items-center justify-between bg-orange-50 p-2 rounded-xl border border-orange-200">
+                            <span className="text-orange-900">نقاط معلقة (بانتظار التأكيد):</span>
+                            <span className="font-bold text-orange-950 font-tajawal">{cust.pendingPoints} نقطة</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#F0E6DC] flex items-center justify-between">
+                      <a
+                        href={`https://wa.me/2${cust.phone.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-xl flex items-center gap-1.5"
+                      >
+                        <i className="fa-brands fa-whatsapp text-sm"></i>
+                        <span>مراسلة واتساب</span>
+                      </a>
+
+                      <a
+                        href={`tel:${cust.phone}`}
+                        className="px-3 py-1.5 bg-[#3E2723] hover:bg-[#2C1810] text-white text-xs font-bold rounded-xl flex items-center gap-1.5"
+                      >
+                        <i className="fa-solid fa-phone text-xs"></i>
+                        <span>اتصال</span>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : filteredOrders.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-[#DECFBE] p-8">
               <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-[#F4EBE1] flex items-center justify-center text-[#A89887] text-2xl">
                 <i className="fa-solid fa-clipboard-list"></i>
@@ -916,34 +995,56 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
 
                           {/* 6. حالة الطلب */}
                           <td className="py-3 px-3 text-center align-top whitespace-nowrap">
-                            {onUpdateOrderStatus ? (
-                              <button
-                                onClick={() =>
-                                  onUpdateOrderStatus(
-                                    order.id,
-                                    isDelivered ? 'placed' : 'delivered'
-                                  )
-                                }
-                                className={`px-2 py-1 text-xs rounded-lg font-bold border transition-colors cursor-pointer ${
-                                  isDelivered
-                                    ? 'bg-[#E3F8EA] text-[#1E7E34] border-[#B9E8C7] hover:bg-[#d5f3df]'
-                                    : 'bg-[#FFF6E5] text-[#B7791F] border-[#FDE68A] hover:bg-[#fdeece]'
-                                }`}
-                                title="اضغط لتغيير الحالة"
-                              >
-                                {isDelivered ? 'تم التسليم ✓' : 'قيد التجهيز ⏳'}
-                              </button>
-                            ) : (
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                                  isDelivered
-                                    ? 'bg-[#E3F8EA] text-[#1E7E34]'
-                                    : 'bg-[#FFF6E5] text-[#B7791F]'
-                                }`}
-                              >
-                                {isDelivered ? 'تم التسليم' : 'قيد التجهيز'}
-                              </span>
-                            )}
+                            <div className="flex flex-col items-center gap-1.5">
+                              {onUpdateOrderStatus ? (
+                                <button
+                                  onClick={() =>
+                                    onUpdateOrderStatus(
+                                      order.id,
+                                      isDelivered ? 'placed' : 'delivered'
+                                    )
+                                  }
+                                  className={`px-2 py-1 text-xs rounded-lg font-bold border transition-colors cursor-pointer ${
+                                    isDelivered
+                                      ? 'bg-[#E3F8EA] text-[#1E7E34] border-[#B9E8C7] hover:bg-[#d5f3df]'
+                                      : 'bg-[#FFF6E5] text-[#B7791F] border-[#FDE68A] hover:bg-[#fdeece]'
+                                  }`}
+                                  title="اضغط لتغيير الحالة"
+                                >
+                                  {isDelivered ? 'تم التسليم ✓' : 'قيد التجهيز ⏳'}
+                                </button>
+                              ) : (
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                    isDelivered
+                                      ? 'bg-[#E3F8EA] text-[#1E7E34]'
+                                      : 'bg-[#FFF6E5] text-[#B7791F]'
+                                  }`}
+                                >
+                                  {isDelivered ? 'تم التسليم' : 'قيد التجهيز'}
+                                </span>
+                              )}
+
+                              {onConfirmOrderPoints && !order.pointsCredited && (order.pointsEarned || 0) > 0 && (
+                                <button
+                                  onClick={() => {
+                                    onConfirmOrderPoints(order.id);
+                                    setConfirmPointsToast(`تم تأكيد الطلب وإضافة ${order.pointsEarned} نقطة لحساب العميل: ${order.customerName}`);
+                                    setTimeout(() => setConfirmPointsToast(''), 4000);
+                                  }}
+                                  className="px-2 py-1 bg-[#C5A059] hover:bg-[#b58f46] text-[#2C1810] font-bold text-[11px] rounded-lg shadow-xs transition-all cursor-pointer flex items-center gap-1"
+                                  title="تأكيد الطلب واعتماد النقاط للعميل"
+                                >
+                                  <i className="fa-solid fa-check-double text-[9px]"></i>
+                                  <span>تأكيد الطلب والنقاط</span>
+                                </button>
+                              )}
+                              {order.pointsCredited && (
+                                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                  ✓ تمت إضافة {order.pointsEarned} نقطة
+                                </span>
+                              )}
+                            </div>
                           </td>
 
                           {/* 7. حذف بيانات المشتري */}
@@ -1100,6 +1201,27 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                         )}
                       </div>
 
+                      {/* Points Confirmation Action for Mr. Tharwat */}
+                      {onConfirmOrderPoints && !order.pointsCredited && (order.pointsEarned || 0) > 0 && (
+                        <button
+                          onClick={() => {
+                            onConfirmOrderPoints(order.id);
+                            setConfirmPointsToast(`تم تأكيد الطلب وإضافة ${order.pointsEarned} نقطة لحساب العميل: ${order.customerName}`);
+                            setTimeout(() => setConfirmPointsToast(''), 4000);
+                          }}
+                          className="w-full py-1.5 bg-[#C5A059] hover:bg-[#b58f46] text-[#2C1810] font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                          title="تأكيد الطلب واعتماد النقاط للعميل"
+                        >
+                          <i className="fa-solid fa-check-double text-[11px]"></i>
+                          <span>تأكيد الطلب واعتماد النقاط ({order.pointsEarned} نقطة)</span>
+                        </button>
+                      )}
+                      {order.pointsCredited && (
+                        <div className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200 text-center">
+                          ✓ تم اعتماد الطلب وإضافة {order.pointsEarned} نقطة لحساب العميل
+                        </div>
+                      )}
+
                       {/* Delete Buyer Data Button */}
                       <div className="pt-2 border-t border-[#F0E6DC] flex items-center justify-between">
                         <span className="text-[10px] text-[#8C7A6B]">
@@ -1128,7 +1250,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           <div className="text-xs text-[#7A6958] flex items-center gap-2">
             <i className="fa-solid fa-shield-halved text-[#C5A059]"></i>
             <span className="hidden sm:inline">
-              البيانات ومجموع المبيعات محفوظة تلقائياً ومتاحة لأستاذ ثروت الهارون دائماً.
+              البيانات ومجموع المبيعات محفوظة تلقائياً ومتاحة لثروت هارون دائماً.
             </span>
             <span className="sm:hidden">البيانات محفوظة تلقائياً.</span>
           </div>
@@ -1318,7 +1440,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                 تغيير كلمة سر المكتب
               </h3>
               <p className="text-xs text-[#E8DEC8] mt-1 font-tajawal">
-                تغيير كلمة السر أو الرمز (PIN) الذي يسجل به أستاذ ثروت الهارون للدخول إلى المكتب
+                تغيير كلمة السر أو الرمز (PIN) الذي يسجل به ثروت هارون للدخول إلى المكتب
               </p>
             </div>
 

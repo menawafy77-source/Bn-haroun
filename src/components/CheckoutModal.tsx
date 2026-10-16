@@ -129,7 +129,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             `💰 المبلغ الإجمالي: ${completedOrder.total} جنيه\n` +
             `💳 طريقة الدفع: ${paymentTitle}\n` +
             (completedOrder.pointsEarned > 0
-              ? `🏆 نقاط هذا الطلب: +${completedOrder.pointsEarned} نقطة (تُضاف للرصيد فور تأكيد أستاذ ثروت)\n`
+              ? `🏆 نقاط هذا الطلب: +${completedOrder.pointsEarned} نقطة (تُضاف للرصيد فور تأكيد ثروت هارون)\n`
               : '') +
             (completedOrder.notes ? `📝 ملاحظات: ${completedOrder.notes}\n` : '') +
             `\nيرجى تأكيد تجهيز الطلب. شكراً لكم!`
@@ -218,7 +218,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     </span>
                     <div className="text-left">
                       <strong className="text-amber-900 font-bold font-mono text-sm block">+{completedOrder.pointsEarned} نقطة</strong>
-                      <span className="text-[10px] text-amber-700 block">تُضاف لرصيدك فور تأكيد أستاذ ثروت</span>
+                      <span className="text-[10px] text-amber-700 block">تُضاف لرصيدك فور تأكيد ثروت هارون</span>
                     </div>
                   </div>
                 )}

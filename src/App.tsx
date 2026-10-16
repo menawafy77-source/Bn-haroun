@@ -365,7 +365,7 @@ export default function App() {
           onAddReview={handleAddReview}
         />
 
-        {/* 8. Office Section (المكتب - أستاذ ثروت الهارون - تظهر تلقائياً بعد الفتح لأول مرة) */}
+        {/* 8. Office Section (المكتب - ثروت هارون - تظهر تلقائياً بعد الفتح لأول مرة) */}
         {isOwnerUnlocked && (
           <OwnerSection
             orders={orders}
@@ -468,7 +468,7 @@ export default function App() {
         <button
           onClick={() => setIsOwnerDashboardOpen(true)}
           className="fixed bottom-5 left-5 z-40 flex items-center gap-2.5 bg-[#2C1810] text-[#F3C07B] hover:text-white hover:bg-[#3E2723] px-4 py-2.5 rounded-2xl shadow-xl border border-[#C5A059]/40 text-xs sm:text-sm font-bold transition-all cursor-pointer group hover:scale-105 active:scale-95 animate-fadeIn"
-          title="المكتب - أستاذ ثروت الهارون"
+          title="المكتب - ثروت هارون"
         >
           <div className="w-6 h-6 rounded-lg bg-[#C5A059] text-[#2C1810] flex items-center justify-center font-black text-xs">
             <i className="fa-solid fa-briefcase"></i>

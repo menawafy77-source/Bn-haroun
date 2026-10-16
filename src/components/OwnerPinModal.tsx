@@ -70,7 +70,7 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
         }, 900);
       } else {
         setError(true);
-        setErrorMessage('كلمة السر غير صحيحة! تأكد من إدخال الرمز المخصص لأستاذ ثروت الهارون.');
+        setErrorMessage('كلمة السر غير صحيحة! تأكد من إدخال الرمز المخصص لثروت هارون.');
         setPin('');
         inputRef.current?.focus();
       }
@@ -131,7 +131,7 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
           </div>
 
           <h3 className="text-xl font-bold font-amiri text-white tracking-wide">
-            المكتب · أستاذ ثروت الهارون
+            المكتب · ثروت هارون
           </h3>
           <p className="text-xs text-[#E8DEC8] mt-1 font-tajawal max-w-xs mx-auto">
             أدخل الرقم السري (PIN) للدخول إلى المكتب وسجل الحسابات والطلبات
@@ -149,7 +149,7 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
                 مكتب الإدارة
               </div>
               <h4 className="text-2xl font-bold font-amiri text-[#2C1810]">
-                أهلاً أستاذ ثروت
+                أهلاً ثروت هارون
               </h4>
               <p className="text-sm text-[#7A6958] mt-1 font-tajawal">
                 تم التحقق من الرمز السري بنجاح. جاري فتح المكتب الخاص بحضرتك...
@@ -171,7 +171,7 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
             >
               <div>
                 <label className="block text-xs font-bold text-[#6B5A4D] mb-2 text-right">
-                  الرقم السري الخاص بأستاذ ثروت الهارون (PIN):
+                  الرقم السري الخاص بثروت هارون (PIN):
                 </label>
 
               <div className="relative">

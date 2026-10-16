@@ -145,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={onOpenOwnerDashboard}
                 className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                title="مكتب أستاذ ثروت الهارون"
+                title="مكتب ثروت هارون"
               >
                 <i className="fas fa-briefcase text-[11px] text-amber-700"></i>
                 <span>المكتب ({ordersCount})</span>
@@ -209,7 +209,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <i className="fas fa-briefcase text-amber-800"></i>
-                  <span>المكتب (أستاذ ثروت الهارون)</span>
+                  <span>المكتب (ثروت هارون)</span>
                 </div>
                 <span className="bg-[#2C1810] text-amber-300 text-[10px] px-2 py-0.5 rounded-full tabular-nums">
                   {ordersCount} طلب

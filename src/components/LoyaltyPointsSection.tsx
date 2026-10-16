@@ -56,7 +56,7 @@ export const LoyaltyPointsSection: React.FC<LoyaltyPointsSectionProps> = ({
           </h2>
 
           <p className="text-sm sm:text-base text-[#7A6958] mt-3 font-tajawal leading-relaxed">
-            نظام مكافآت مباشر وبسيط: كل كيس تشتريه يمنحك نقاطاً تلقائية، وعند الوصول لـ <strong className="text-[#2C1810] font-black">100 نقطة</strong> تستلم <strong className="text-[#8C5E35] font-black">كيلو بن كامل مجاناً</strong> هدية من أستاذ ثروت الهارون.
+            نظام مكافآت مباشر وبسيط: كل كيس تشتريه يمنحك نقاطاً تلقائية، وعند الوصول لـ <strong className="text-[#2C1810] font-black">100 نقطة</strong> تستلم <strong className="text-[#8C5E35] font-black">كيلو بن كامل مجاناً</strong> هدية من ثروت هارون.
           </p>
         </div>
 
@@ -146,7 +146,7 @@ export const LoyaltyPointsSection: React.FC<LoyaltyPointsSectionProps> = ({
               </h3>
 
               <p className="text-sm text-[#F3C07B] font-bold font-tajawal">
-                هدية خاصة من أستاذ ثروت الهارون عند تجميع 100 نقطة
+                هدية خاصة من ثروت هارون عند تجميع 100 نقطة
               </p>
 
               <p className="text-xs sm:text-sm text-[#E8DEC8] leading-relaxed font-tajawal max-w-xl">

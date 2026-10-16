@@ -5,6 +5,7 @@ interface OwnerSectionProps {
   orders: Order[];
   onOpenDashboard: () => void;
   onUpdateOrderStatus?: (orderId: string, newStatus: Order['status']) => void;
+  onConfirmOrderPoints?: (orderId: string) => void;
   onDeleteOrder?: (orderId: string) => void;
   onLockDashboard?: () => void;
 }
@@ -68,10 +69,10 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3E2723] text-[#F3C07B] text-xs font-bold mb-3 shadow-xs">
               <i className="fa-solid fa-briefcase text-[#C5A059]"></i>
-              <span>المكتب · أستاذ ثروت الهارون</span>
+              <span>المكتب · ثروت هارون</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-amiri text-[#2C1810]">
-              المكتب · سجل طلبات ومبيعات أستاذ ثروت الهارون
+              المكتب · سجل طلبات ومبيعات ثروت هارون
             </h2>
             <p className="text-sm text-[#7A6958] mt-2 max-w-3xl font-tajawal leading-relaxed">
               تظهر لك بيانات المكتب كاملة بجميع تفاصيل المشترين: اسم العميل، الرقم، المنتجات المشتراة، السعر الإجمالي، وتاريخ الطلب مع إمكانية حذف بيانات المشتري وتحديث حالة الطلب.
@@ -109,7 +110,7 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
           </div>
         </div>
 
-        {/* Welcome Message for Mr. Tharwat ("أهلاً أستاذ ثروت") */}
+        {/* Welcome Message for Mr. Tharwat ("أهلاً ثروت هارون") */}
         <div className="bg-gradient-to-r from-[#2C1810] via-[#3E2723] to-[#2C1810] text-white p-4 sm:p-5 rounded-3xl border-2 border-[#C5A059]/60 shadow-xl mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C5A059] to-[#8C5E35] p-0.5 shadow-md shrink-0 flex items-center justify-center border border-[#C5A059]">
@@ -118,20 +119,20 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h3 className="text-xl sm:text-2xl font-bold font-amiri text-[#F3C07B]">
-                  أهلاً أستاذ ثروت
+                  أهلاً ثروت هارون
                 </h3>
                 <span className="bg-[#C5A059] text-[#2C1810] text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs">
                   مرحباً بك في مكتبك
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[#E8DEC8] mt-1 font-tajawal">
-                مرحباً بحضرتك أستاذ ثروت الهارون في مكتب الإدارة لمتابعة كافة مبيعات وحسابات المتجر وتفاصيل المشترين.
+                مرحباً بحضرتك ثروت هارون في مكتب الإدارة لمتابعة كافة مبيعات وحسابات المتجر وتفاصيل المشترين.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-xs text-[#EADBCE]">
             <i className="fa-solid fa-briefcase text-[#C5A059]"></i>
-            <span>مكتب أستاذ ثروت الهارون</span>
+            <span>مكتب ثروت هارون</span>
           </div>
         </div>
 
