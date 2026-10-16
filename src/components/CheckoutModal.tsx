@@ -65,7 +65,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         }, 0);
 
       const newOrder: Order = {
-        id: `ord-${Date.now()}`,
+        id: `ORD-${Date.now()}`,
         orderNumber,
         date: new Intl.DateTimeFormat('ar-EG', { dateStyle: 'long' }).format(new Date()),
         customerName: customerName.trim(),
@@ -94,6 +94,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setIsSubmitting(false);
       setCompletedOrder(newOrder);
       onOrderSuccess(newOrder);
+
+      // Reset form
+      setCustomerName('');
+      setCustomerPhone('');
+      setNotes('');
+      onClose();
     }, 1000);
   };
 

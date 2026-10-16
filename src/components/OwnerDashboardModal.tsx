@@ -321,7 +321,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn overflow-hidden">
+    <div className="fixed inset-0 z-65 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn overflow-hidden">
       <div
         className={`bg-[#FBF8F3] border-2 border-[#C5A059]/40 flex flex-col shadow-2xl transition-all duration-300 overflow-hidden ${
           isFullScreen
@@ -756,7 +756,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-3 sm:p-5 overflow-y-auto flex-1">
+        <div className="p-3 sm:p-5 overflow-y-auto flex-1 max-h-[70vh]">
           {activeTab === 'customers' ? (
             /* Customers Directory Tab */
             filteredCustomers.length === 0 ? (

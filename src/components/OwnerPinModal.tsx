@@ -101,7 +101,7 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div
         className="bg-[#FBF8F3] border-2 border-[#C5A059]/40 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-scaleUp text-[#2C1810]"
         onClick={(e) => e.stopPropagation()}
