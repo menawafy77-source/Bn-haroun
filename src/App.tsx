@@ -193,7 +193,7 @@ export default function App() {
       weightLabel: '1 كيلو (1000 جم) مجاناً',
       price: 0,
       quantity: 1,
-      image: '/src/assets/images/hero_haroun_coffee_1791931203817.jpg',
+      image: '/hero_haroun_coffee_1791931203817.jpg',
       spiceLevel: 'مخصوص متوازن',
       isLoyaltyReward: true,
     };

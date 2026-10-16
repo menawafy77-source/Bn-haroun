@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { STORE_CONTACT } from '../data/coffeeData';
 import { getSavedVideoUrl } from '../utils/videoStorage';
+import { getPublicMediaPath } from '../utils/media';
 
 interface HeroSectionProps {
   onExploreProducts: () => void;
@@ -9,7 +10,7 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreProducts,
 }) => {
-  const [videoSrc, setVideoSrc] = useState<string>('/videos/ben_haroun_promo.mp4');
+  const [videoSrc, setVideoSrc] = useState<string>(getPublicMediaPath('videos/ben_haroun_promo.mp4'));
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
