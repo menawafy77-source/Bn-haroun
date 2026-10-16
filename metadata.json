@@ -1,0 +1,6 @@
+{
+  "name": "بن هارون - متجر القهوة الأصيلة",
+  "description": "متجر إلكتروني لبيع بن هارون السادة والمحوج بأعلى جودة وطحن طازج، مع خيارات دفع متعددة وتتبع الشحنات ونظام ولاء للمكافآت.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
