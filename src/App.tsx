@@ -68,13 +68,13 @@ export default function App() {
     }
   });
 
-  // 4. Customer Loyalty Points State with localStorage persistence (Default 100 points for immediate testing of 100-pt reward)
+  // 4. Customer Loyalty Points State with localStorage persistence (Starts at 0 for new visitors)
   const [loyaltyPoints, setLoyaltyPoints] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('haroun_loyalty_points');
-      return saved !== null ? parseInt(saved, 10) : 100;
+      return saved !== null ? parseInt(saved, 10) : 0; // تبدأ من صفر للعميل الجديد
     } catch {
-      return 100;
+      return 0;
     }
   });
 
