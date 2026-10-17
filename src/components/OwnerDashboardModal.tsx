@@ -9,6 +9,7 @@ interface OwnerDashboardModalProps {
   onUpdateOrderStatus?: (orderId: string, newStatus: Order['status']) => void;
   onConfirmOrderPoints?: (orderId: string) => void;
   onDeleteOrder?: (orderId: string) => void;
+  onClearAllOrders?: () => void;
   onAddManualOrder?: (order: Order) => void;
   onLockDashboard?: () => void;
 }
@@ -20,6 +21,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   onUpdateOrderStatus,
   onConfirmOrderPoints,
   onDeleteOrder,
+  onClearAllOrders,
   onAddManualOrder,
   onLockDashboard,
 }) => {
@@ -422,7 +424,9 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           </div>
         </div>
 
-        {/* Welcome Message for Mr. Tharwat ("أهلاً ثروت هارون") */}
+        {/* Scrollable Dashboard Body: Everything below Header scrolls together */}
+        <div className="flex-1 overflow-y-auto min-h-0 bg-[#FBF8F3] overscroll-contain">
+          {/* Welcome Message for Mr. Tharwat ("أهلاً ثروت هارون") */}
         <div className="bg-gradient-to-r from-[#2C1810] via-[#3E2723] to-[#2C1810] px-4 py-3.5 sm:px-6 sm:py-4 border-b border-[#C5A059]/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shadow-inner shrink-0">
           <div className="flex items-center gap-3.5 w-full sm:w-auto">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#C5A059] to-[#8C5E35] p-0.5 shadow-md shrink-0 flex items-center justify-center border border-[#C5A059]">
@@ -628,135 +632,138 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           </div>
         </div>
 
-        {/* Primary View Switcher: Orders vs Customers Directory */}
-        <div className="px-3 sm:px-5 pt-3 bg-[#FAF4ED] border-b border-[#EADBCE] flex items-center justify-between shrink-0 gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all cursor-pointer border-t border-x ${
-                activeTab === 'orders'
-                  ? 'bg-white text-[#2C1810] border-[#D9CABB] shadow-xs -mb-[1px]'
-                  : 'bg-transparent text-[#7A6958] border-transparent hover:text-[#2C1810]'
-              }`}
-            >
-              <i className="fa-solid fa-receipt text-amber-700"></i>
-              <span>سجل الطلبات والمبيعات</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-950 font-mono font-bold">
-                {orders.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('customers')}
-              className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all cursor-pointer border-t border-x ${
-                activeTab === 'customers'
-                  ? 'bg-white text-[#2C1810] border-[#D9CABB] shadow-xs -mb-[1px]'
-                  : 'bg-transparent text-[#7A6958] border-transparent hover:text-[#2C1810]'
-              }`}
-            >
-              <i className="fa-solid fa-users text-amber-700"></i>
-              <span>دليل العملاء ونقاط الولاء</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#3E2723] text-[#F3C07B] font-mono font-bold">
-                {customerSummaries.length} عميل
-              </span>
-            </button>
-          </div>
-
-          <div className="text-xs text-[#8C7A6B] hidden md:block pb-1">
-            {activeTab === 'orders' ? 'عرض تفاصيل مشتريات كل عميل مع تأكيد النقاط' : 'سجل أسماء العملاء وأرقامهم وإجمالي النقاط المجمعة'}
-          </div>
-        </div>
-
-        {/* Filter & View Toolbar */}
-        <div className="px-3 sm:px-5 py-2.5 bg-[#FAF4ED] border-b border-[#EADBCE] flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
-          {/* Search Box */}
-          <div className="relative w-full sm:w-80">
-            <i className="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-[#A89887] text-xs"></i>
-            <input
-              type="text"
-              placeholder="ابحث باسم المشتري، رقم التليفون، الصنف، الكود..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-9 py-1.5 bg-white border border-[#D9CABB] rounded-xl text-xs sm:text-sm text-[#2C1810] focus:outline-none focus:border-[#C5A059]"
-            />
-            {searchTerm && (
+        {/* Sticky Tab Switcher & Filter Toolbar */}
+        <div className="sticky top-0 z-20 bg-[#FAF4ED] border-b border-[#EADBCE] shadow-xs">
+          {/* Primary View Switcher: Orders vs Customers Directory */}
+          <div className="px-3 sm:px-5 pt-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setSearchTerm('')}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A89887] hover:text-[#2C1810] text-xs cursor-pointer"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            )}
-          </div>
-
-          {/* Controls */}
-          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            {/* Status Tabs */}
-            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#D9CABB]">
-              <button
-                onClick={() => setStatusFilter('all')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  statusFilter === 'all'
-                    ? 'bg-[#3E2723] text-white shadow-xs'
-                    : 'text-[#7A6958] hover:bg-[#F4EBE1]'
+                onClick={() => setActiveTab('orders')}
+                className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all cursor-pointer border-t border-x ${
+                  activeTab === 'orders'
+                    ? 'bg-white text-[#2C1810] border-[#D9CABB] shadow-xs -mb-[1px]'
+                    : 'bg-transparent text-[#7A6958] border-transparent hover:text-[#2C1810]'
                 }`}
               >
-                الكل ({orders.length})
+                <i className="fa-solid fa-receipt text-amber-700"></i>
+                <span>سجل الطلبات والمبيعات</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-950 font-mono font-bold">
+                  {orders.length}
+                </span>
               </button>
+
               <button
-                onClick={() => setStatusFilter('placed')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  statusFilter === 'placed'
-                    ? 'bg-[#C5A059] text-[#2C1810] shadow-xs'
-                    : 'text-[#7A6958] hover:bg-[#F4EBE1]'
+                onClick={() => setActiveTab('customers')}
+                className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all cursor-pointer border-t border-x ${
+                  activeTab === 'customers'
+                    ? 'bg-white text-[#2C1810] border-[#D9CABB] shadow-xs -mb-[1px]'
+                    : 'bg-transparent text-[#7A6958] border-transparent hover:text-[#2C1810]'
                 }`}
               >
-                قيد التجهيز
-              </button>
-              <button
-                onClick={() => setStatusFilter('delivered')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  statusFilter === 'delivered'
-                    ? 'bg-[#25D366] text-white shadow-xs'
-                    : 'text-[#7A6958] hover:bg-[#F4EBE1]'
-                }`}
-              >
-                تم التسليم
+                <i className="fa-solid fa-users text-amber-700"></i>
+                <span>دليل العملاء ونقاط الولاء</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#3E2723] text-[#F3C07B] font-mono font-bold">
+                  {customerSummaries.length} عميل
+                </span>
               </button>
             </div>
 
-            {/* View Mode */}
-            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#D9CABB]">
-              <button
-                onClick={() => setViewMode('table')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-[#3E2723] text-[#F3C07B]'
-                    : 'text-[#7A6958] hover:bg-[#F4EBE1]'
-                }`}
-                title="عرض جدول تفصيلي"
-              >
-                <i className="fa-solid fa-table-list"></i>
-                <span>جدول</span>
-              </button>
-              <button
-                onClick={() => setViewMode('cards')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
-                  viewMode === 'cards'
-                    ? 'bg-[#3E2723] text-[#F3C07B]'
-                    : 'text-[#7A6958] hover:bg-[#F4EBE1]'
-                }`}
-                title="عرض بطاقات"
-              >
-                <i className="fa-solid fa-border-all"></i>
-                <span>بطاقات</span>
-              </button>
+            <div className="text-xs text-[#8C7A6B] hidden md:block pb-1">
+              {activeTab === 'orders' ? 'عرض تفاصيل مشتريات كل عميل مع تأكيد النقاط' : 'سجل أسماء العملاء وأرقامهم وإجمالي النقاط المجمعة'}
+            </div>
+          </div>
+
+          {/* Filter & View Toolbar */}
+          <div className="px-3 sm:px-5 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            {/* Search Box */}
+            <div className="relative w-full sm:w-80">
+              <i className="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-[#A89887] text-xs"></i>
+              <input
+                type="text"
+                placeholder="ابحث باسم المشتري، رقم التليفون، الصنف، الكود..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-8 pr-9 py-1.5 bg-white border border-[#D9CABB] rounded-xl text-xs sm:text-sm text-[#2C1810] focus:outline-none focus:border-[#C5A059]"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A89887] hover:text-[#2C1810] text-xs cursor-pointer"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+              {/* Status Tabs */}
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#D9CABB]">
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    statusFilter === 'all'
+                      ? 'bg-[#3E2723] text-white shadow-xs'
+                      : 'text-[#7A6958] hover:bg-[#F4EBE1]'
+                  }`}
+                >
+                  الكل ({orders.length})
+                </button>
+                <button
+                  onClick={() => setStatusFilter('placed')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    statusFilter === 'placed'
+                      ? 'bg-[#C5A059] text-[#2C1810] shadow-xs'
+                      : 'text-[#7A6958] hover:bg-[#F4EBE1]'
+                  }`}
+                >
+                  قيد التجهيز
+                </button>
+                <button
+                  onClick={() => setStatusFilter('delivered')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    statusFilter === 'delivered'
+                      ? 'bg-[#25D366] text-white shadow-xs'
+                      : 'text-[#7A6958] hover:bg-[#F4EBE1]'
+                  }`}
+                >
+                  تم التسليم
+                </button>
+              </div>
+
+              {/* View Mode */}
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#D9CABB]">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                    viewMode === 'table'
+                      ? 'bg-[#3E2723] text-[#F3C07B]'
+                      : 'text-[#7A6958] hover:bg-[#F4EBE1]'
+                  }`}
+                  title="عرض جدول تفصيلي"
+                >
+                  <i className="fa-solid fa-table-list"></i>
+                  <span>جدول</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                    viewMode === 'cards'
+                      ? 'bg-[#3E2723] text-[#F3C07B]'
+                      : 'text-[#7A6958] hover:bg-[#F4EBE1]'
+                  }`}
+                  title="عرض بطاقات"
+                >
+                  <i className="fa-solid fa-border-all"></i>
+                  <span>بطاقات</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-3 sm:p-5 overflow-y-auto flex-1 max-h-[70vh]">
+        <div className="p-3 sm:p-5 min-h-[350px] pb-12">
           {activeTab === 'customers' ? (
             /* Customers Directory Tab */
             filteredCustomers.length === 0 ? (
@@ -1246,7 +1253,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-3 sm:p-4 bg-[#F4EBE1] border-t border-[#EADBCE] flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="p-3 sm:p-4 bg-[#F4EBE1] border-t border-[#EADBCE] flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs text-[#7A6958] flex items-center gap-2">
             <i className="fa-solid fa-shield-halved text-[#C5A059]"></i>
             <span className="hidden sm:inline">
@@ -1256,6 +1263,20 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {onClearAllOrders && orders.length > 0 && (
+              <button
+                onClick={() => {
+                  if (window.confirm('هل أنت متأكد من تفريغ وحذف جميع الطلبات المسجلة من السجل؟')) {
+                    onClearAllOrders();
+                  }
+                }}
+                className="px-3.5 py-2 bg-red-100 hover:bg-red-200 text-red-800 font-bold text-xs rounded-xl border border-red-300 transition-colors cursor-pointer flex items-center gap-1.5"
+                title="تفريغ ومسح سجل الطلبات"
+              >
+                <i className="fa-solid fa-trash-can text-red-600 text-xs"></i>
+                <span>تفريغ السجل ({orders.length})</span>
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-5 py-2 bg-[#3E2723] hover:bg-[#2C1810] text-white font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer"
@@ -1264,7 +1285,8 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
             </button>
           </div>
         </div>
-      </div>
+      </div> {/* Close scrollable dashboard body */}
+      </div> {/* Close modal outer frame */}
 
       {/* Manual Order Creation Modal */}
       {showAddModal && (

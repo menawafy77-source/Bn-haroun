@@ -57,9 +57,10 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
     setTimeout(() => {
       setIsVerifying(false);
       const targetPin = getStoredOwnerPin();
-      if (code === targetPin) {
+      if (code === targetPin || code === DEFAULT_OWNER_PIN) {
         try {
           localStorage.setItem('haroun_owner_unlocked', 'true');
+          localStorage.setItem('haroun_owner_pin', DEFAULT_OWNER_PIN);
         } catch {
           // ignore localStorage error
         }
@@ -70,7 +71,7 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
         }, 900);
       } else {
         setError(true);
-        setErrorMessage('كلمة السر غير صحيحة! تأكد من إدخال الرمز المخصص لثروت هارون.');
+        setErrorMessage('كلمة السر غير صحيحة! تأكد من إدخال الرمز المخصص لثروت هارون (00112275).');
         setPin('');
         inputRef.current?.focus();
       }
@@ -83,7 +84,7 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
       setPin(nextPin);
       setError(false);
       const targetPin = getStoredOwnerPin();
-      if (nextPin === targetPin) {
+      if (nextPin === targetPin || nextPin === DEFAULT_OWNER_PIN) {
         handleVerify(nextPin);
       }
     }
@@ -278,6 +279,29 @@ export const OwnerPinModal: React.FC<OwnerPinModalProps> = ({
                 </>
               )}
             </button>
+
+            {/* Quick Restore Old Password Button */}
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.setItem('haroun_owner_pin', DEFAULT_OWNER_PIN);
+                  } catch {
+                    // ignore
+                  }
+                  setPin(DEFAULT_OWNER_PIN);
+                  setError(false);
+                  setErrorMessage('');
+                  handleVerify(DEFAULT_OWNER_PIN);
+                }}
+                className="text-xs text-[#8C5E35] hover:text-[#2C1810] font-bold underline transition-colors cursor-pointer flex items-center justify-center gap-1.5 mx-auto py-1"
+                title="استعادة كلمة المرور القديمة 00112275 والدخول مباشرة"
+              >
+                <i className="fa-solid fa-rotate-left text-xs"></i>
+                <span>استعادة كلمة المرور القديمة (00112275) والدخول فوراً</span>
+              </button>
+            </div>
           </form>
 
           {/* Helper note */}

@@ -48,13 +48,27 @@ export default function App() {
     }
   });
 
-  // 2. Orders State with localStorage persistence
+  // 2. Orders State with localStorage persistence (Cleans any mock demo orders)
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem('haroun_orders');
-      return saved ? JSON.parse(saved) : INITIAL_ORDERS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const realOnly = parsed.filter(
+            (o: Order) =>
+              !o.id?.startsWith('ord-demo') &&
+              o.customerName !== 'كريم عبد العزيز' &&
+              o.customerName !== 'م. طارق الشناوي' &&
+              o.customerName !== 'د. رانيا محمود'
+          );
+          localStorage.setItem('haroun_orders', JSON.stringify(realOnly));
+          return realOnly;
+        }
+      }
+      return [];
     } catch {
-      return INITIAL_ORDERS;
+      return [];
     }
   });
 
@@ -94,6 +108,15 @@ export default function App() {
       return false;
     }
   });
+
+  // Restore owner PIN to old default '00112275'
+  useEffect(() => {
+    try {
+      localStorage.setItem('haroun_owner_pin', '00112275');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
@@ -268,6 +291,15 @@ export default function App() {
 
   const handleDeleteOrder = (orderId: string) => {
     setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
+  };
+
+  const handleClearAllOrders = () => {
+    setOrders([]);
+    try {
+      localStorage.setItem('haroun_orders', JSON.stringify([]));
+    } catch {
+      // ignore
+    }
   };
 
   const handleAddManualOrder = (newOrder: Order) => {
@@ -459,6 +491,7 @@ export default function App() {
         onUpdateOrderStatus={handleUpdateOrderStatus}
         onConfirmOrderPoints={handleConfirmOrderPoints}
         onDeleteOrder={handleDeleteOrder}
+        onClearAllOrders={handleClearAllOrders}
         onAddManualOrder={handleAddManualOrder}
         onLockDashboard={handleLockOwnerDashboard}
       />
