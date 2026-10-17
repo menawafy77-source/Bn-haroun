@@ -23,6 +23,7 @@ import { OwnerDashboardModal } from './components/OwnerDashboardModal';
 import { OwnerPinModal } from './components/OwnerPinModal';
 import { Footer } from './components/Footer';
 import { FacebookBanner } from './components/FacebookBanner';
+import { supabase } from './supabaseClient';
 
 import {
   Product,
@@ -111,14 +112,41 @@ export default function App() {
     }
   }, []);
 
+  // Fetch orders from Supabase
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (data) {
+        setOrders(data);
+      }
+    };
+    fetchOrders();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          setOrders((prev) => [payload.new as Order, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Sync to localStorage
   useEffect(() => {
     localStorage.setItem('haroun_cart', JSON.stringify(cartItems));
   }, [cartItems]);
-
-  useEffect(() => {
-    localStorage.setItem('haroun_orders', JSON.stringify(orders));
-  }, [orders]);
 
   useEffect(() => {
     localStorage.setItem('haroun_reviews', JSON.stringify(reviews));
@@ -232,14 +260,21 @@ export default function App() {
 
     setOrders((prev) => {
       const updatedOrders = [newOrder, ...prev];
-      // حفظ الطلبات مباشرة في localStorage عشان المكتب يقراها حتى لو حصل تحديث للصفحة
-      try {
-        localStorage.setItem('haroun_orders', JSON.stringify(updatedOrders));
-      } catch (e) {
-        console.error('Error saving orders', e);
-      }
       return updatedOrders;
     });
+
+    // Save to Supabase
+    const saveToSupabase = async () => {
+      const { error } = await supabase
+        .from('orders')
+        .insert([newOrder]);
+      
+      if (error) {
+        console.error('Error saving order to Supabase', error);
+      }
+    };
+    saveToSupabase();
+
 
     // خصم أو إضافة نقاط الولاء أو تجهيزها للاعتماد
     const hasReward = newOrder.items.some((item) => item.isLoyaltyReward);
