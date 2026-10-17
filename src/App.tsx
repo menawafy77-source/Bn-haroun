@@ -246,46 +246,36 @@ export default function App() {
   };
 
   // Order Success Handler (تحديث الطلبات وحفظها فورا لظهرورها في المكتب)
-  const handleOrderSuccess = (newOrder: Order) => {
-    // Calculate points earned on regular purchased items (1 pt for 100g, 3 pts for 250g)
-    const pointsEarned = newOrder.items
-      .filter((item) => !item.isLoyaltyReward)
-      .reduce((sum, item) => {
-        const pts = item.weight === '100g' ? 1 : 3;
-        return sum + pts * item.quantity;
-      }, 0);
+  const handleOrderSuccess = async (newOrder: Order) => {
+    console.log("جارٍ إرسال الطلب إلى Supabase...", newOrder);
 
-    // إضافة نقاط معلقة للطلب الجديد عشان أستاذ ثروت يعتمدها
-    newOrder.pointsEarned = pointsEarned;
+    // 1. حفظ الطلب في جدول Supabase
+    // Note: Mapping interface properties to user-provided column names
+    const { data, error } = await supabase.from('orders').insert([
+      {
+        id: newOrder.id,
+        customerName: newOrder.customerName,
+        phone: newOrder.customerPhone,
+        address: newOrder.customerAddress,
+        totalPrice: newOrder.total,
+        paymentMethod: newOrder.paymentMethod || 'الدفع عند الاستلام',
+        transferNumber: newOrder.notes?.includes('رقم التحويل:') ? newOrder.notes.replace('رقم التحويل: ', '') : null,
+        status: 'pending',
+        items: newOrder.items,
+      }
+    ]).select();
+
+    if (error) {
+      console.error('❌ خطأ تفصيلي من Supabase أثناء حفظ الطلب:', error.message, error.details, error.hint);
+      // alert('فشل حفظ الطلب في قاعدة البيانات: ' + error.message);
+      // We will keep local state update even if supabase fails for now to maintain UX
+    } else {
+      console.log('✅ تم حفظ الطلب بنجاح في قاعدة البيانات:', data);
+    }
 
     setOrders((prev) => {
       const updatedOrders = [newOrder, ...prev];
       return updatedOrders;
-    });
-
-    // Save to Supabase
-    const saveToSupabase = async () => {
-      const { error } = await supabase
-        .from('orders')
-        .insert([newOrder]);
-      
-      if (error) {
-        console.error('Error saving order to Supabase', error);
-      }
-    };
-    saveToSupabase();
-
-
-    // خصم أو إضافة نقاط الولاء أو تجهيزها للاعتماد
-    const hasReward = newOrder.items.some((item) => item.isLoyaltyReward);
-
-    setLoyaltyPoints((prev) => {
-      let updated = prev;
-      if (hasReward) {
-        // Deduct 100 points for the redeemed free kilo
-        updated = Math.max(0, updated - 100);
-      }
-      return updated;
     });
 
     setCartItems([]);
