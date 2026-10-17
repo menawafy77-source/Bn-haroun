@@ -32,7 +32,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     e.preventDefault();
     setFormError('');
 
-    // التحقق من إدخال رقم التحويل في حالة الدفع الإلكتروني
+    // 1. التحقق من رقم التحويل في حالة الدفع الإلكتروني
     if (paymentMethod !== 'cash' && !transferNumber.trim()) {
       setFormError('يرجى إدخال رقم التحويل الخاص بالدفع الإلكتروني لتأكيد الطلب.');
       return;
@@ -43,7 +43,44 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       paymentMethod === 'vodafone_cash' ? 'فودافون كاش' :
       paymentMethod === 'instapay' ? 'إنستاباي' : 'الدفع عند الاستلام';
 
-    // تجهيز رسالة الواتساب مع تفاصيل الدفع ورقم التحويل
+    // 2. حساب النقاط المستحقة للطلب
+    const pointsEarned = items
+      .filter((item) => !item.isLoyaltyReward)
+      .reduce((sum, item) => {
+        const pts = item.weight === '100g' ? 1 : 3;
+        return sum + pts * item.quantity;
+      }, 0);
+
+    // 3. إنشاء كائن الطلب الجديد بالكامل
+    const newOrder: Order = {
+      id: orderId,
+      customerName,
+      customerPhone: phone,
+      customerAddress: address,
+      items: [...items],
+      total: subtotal,
+      status: 'placed',
+      date: new Date().toLocaleString('ar-EG'),
+      paymentMethod: paymentLabel as any,
+      notes: paymentMethod !== 'cash' ? `رقم التحويل: ${transferNumber}` : undefined,
+      pointsEarned: pointsEarned,
+      pointsCredited: false,
+    } as any;
+
+    // 4. 🔥 الحفظ الفوري المباشر في localStorage لضمان ظهوره في المكتب حتى لو ما اتداسش واتساب 🔥
+    try {
+      const savedOrders = localStorage.getItem('haroun_orders');
+      const currentOrders = savedOrders ? JSON.parse(savedOrders) : [];
+      const updatedOrders = [newOrder, ...currentOrders];
+      localStorage.setItem('haroun_orders', JSON.stringify(updatedOrders));
+    } catch (err) {
+      console.error("فشل حفظ الطلب في ذاكرة المتصفح:", err);
+    }
+
+    // 5. إبلاغ التطبيق بالطلب الجديد لتحديث الشاشة فوراً
+    onOrderSuccess(newOrder);
+
+    // 6. تجهيز فتح الواتساب
     let message = `مرحباً بن هارون، أرغب في تأكيد طلبي:%0A` +
       `• رقم الطلب: ${orderId}%0A` +
       `• الاسم: ${customerName}%0A` +
@@ -57,40 +94,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     message += `• الإجمالي: ${subtotal} ج.م`;
 
-    // فتح الواتساب للمحمصة
     const whatsappUrl = `https://wa.me/201275075046?text=${message}`;
-    try {
-      window.open(whatsappUrl, '_blank');
-    } catch {
-      // ignore
-    }
 
-    // حفظ الطلب في النظام لمكتب أستاذ ثروت
-    const newOrder: Order = {
-      id: orderId,
-      customerName,
-      customerPhone: phone,
-      customerAddress: address,
-      items: [...items],
-      total: subtotal,
-      status: 'placed',
-      date: new Date().toLocaleString('ar-EG'),
-      // حفظ بيانات الدفع ضمن الطلب
-      paymentMethod: paymentLabel as any,
-      notes: paymentMethod !== 'cash' ? `رقم التحويل: ${transferNumber}` : undefined,
-    } as any;
-
-    onOrderSuccess(newOrder);
-
-    // عرض شاشة النجاح وتأكيد وصول الطلب للمكتب
+    // 7. عرض شاشة النجاح
     setSuccessInfo({ orderId, whatsappUrl, name: customerName });
 
-    // تصفير الخانات للطلب القادم
+    // 8. إعادة ضبط الخانات وتصفير النموذج
     setCustomerName('');
     setPhone('');
     setAddress('');
     setTransferNumber('');
     setPaymentMethod('cash');
+
+    // 9. فتح الواتساب في النهاية
+    try {
+      window.open(whatsappUrl, '_blank');
+    } catch {
+      // ignore
+    }
   };
 
   return (

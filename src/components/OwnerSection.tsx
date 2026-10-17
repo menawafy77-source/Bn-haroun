@@ -37,10 +37,10 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
   const filteredOrders = orders.filter((order) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
-      order.customerName.toLowerCase().includes(term) ||
-      order.customerPhone.includes(term) ||
-      order.orderNumber.toLowerCase().includes(term) ||
-      order.items.some((item) => item.productName.toLowerCase().includes(term));
+      (order.customerName || '').toLowerCase().includes(term) ||
+      (order.customerPhone || '').includes(term) ||
+      (order.orderNumber || '').toLowerCase().includes(term) ||
+      (order.items || []).some((item) => (item.productName || '').toLowerCase().includes(term));
 
     const matchesStatus =
       statusFilter === 'all'
