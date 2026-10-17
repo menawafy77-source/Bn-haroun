@@ -247,16 +247,13 @@ export default function App() {
 
   // Order Success Handler (تحديث الطلبات وحفظها فورا لظهرورها في المكتب)
   const handleOrderSuccess = async (newOrder: Order) => {
-    console.log("جارٍ إرسال الطلب إلى Supabase...", newOrder);
-
     // 1. حفظ الطلب في جدول Supabase
-    // Note: Mapping interface properties to user-provided column names
     const { data, error } = await supabase.from('orders').insert([
       {
         id: newOrder.id,
         customerName: newOrder.customerName,
-        phone: newOrder.customerPhone,
-        address: newOrder.customerAddress,
+        customerPhone: newOrder.customerPhone,
+        customerAddress: newOrder.customerAddress,
         totalPrice: newOrder.total,
         paymentMethod: newOrder.paymentMethod || 'الدفع عند الاستلام',
         transferNumber: newOrder.notes?.includes('رقم التحويل:') ? newOrder.notes.replace('رقم التحويل: ', '') : null,
@@ -266,13 +263,14 @@ export default function App() {
     ]).select();
 
     if (error) {
-      console.error('❌ خطأ تفصيلي من Supabase أثناء حفظ الطلب:', error.message, error.details, error.hint);
-      // alert('فشل حفظ الطلب في قاعدة البيانات: ' + error.message);
-      // We will keep local state update even if supabase fails for now to maintain UX
-    } else {
-      console.log('✅ تم حفظ الطلب بنجاح في قاعدة البيانات:', data);
+      // لو فيه خطأ، هيطلع لك رسالة واضحة على شاشة الموبايل فوراً بالسبب!
+      alert('خطأ في قاعدة البيانات: ' + error.message);
+      console.error(error);
+      return;
     }
 
+    alert('✅ تم حفظ الطلب في Supabase بنجاح!');
+    
     setOrders((prev) => {
       const updatedOrders = [newOrder, ...prev];
       return updatedOrders;
