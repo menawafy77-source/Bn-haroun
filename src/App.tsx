@@ -49,22 +49,14 @@ export default function App() {
     }
   });
 
-  // 2. Orders State with localStorage persistence (Cleans any mock demo orders)
+  // 2. Orders State with localStorage persistence (No auto-clearing / cancellation of automatic filtering)
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem('haroun_orders');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          const realOnly = parsed.filter(
-            (o: Order) =>
-              !o.id?.startsWith('ord-demo') &&
-              o.customerName !== 'كريم عبد العزيز' &&
-              o.customerName !== 'م. طارق الشناوي' &&
-              o.customerName !== 'د. رانيا محمود'
-          );
-          localStorage.setItem('haroun_orders', JSON.stringify(realOnly));
-          return realOnly;
+          return parsed;
         }
       }
       return [];
