@@ -23,15 +23,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [address, setAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [transferNumber, setTransferNumber] = useState('');
+  const [formError, setFormError] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
 
     // التحقق من إدخال رقم التحويل في حالة الدفع الإلكتروني
     if (paymentMethod !== 'cash' && !transferNumber.trim()) {
-      alert('يرجى إدخال رقم التحويل الخاص بالدفع الإلكتروني لتأكيد الطلب.');
+      setFormError('يرجى إدخال رقم التحويل الخاص بالدفع الإلكتروني لتأكيد الطلب.');
       return;
     }
 
@@ -94,6 +96,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2 animate-shake">
+              <i className="fa-solid fa-circle-exclamation shrink-0 text-red-500"></i>
+              <span>{formError}</span>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-semibold mb-1">الاسم بالكامل</label>
             <input

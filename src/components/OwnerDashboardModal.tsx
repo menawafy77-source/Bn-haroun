@@ -34,6 +34,8 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [deleteSuccessToast, setDeleteSuccessToast] = useState('');
   const [confirmPointsToast, setConfirmPointsToast] = useState('');
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+  const [clearSuccessToast, setClearSuccessToast] = useState('');
 
   // Password change state ("زر في المكتب يغير منه كلمة السر الي يسجل بيها")
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -269,6 +271,21 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
     window.print();
   };
 
+  const handleExecuteClearAll = () => {
+    try {
+      localStorage.setItem('haroun_orders', '[]');
+      localStorage.removeItem('haroun_orders');
+    } catch {
+      // ignore
+    }
+    if (onClearAllOrders) {
+      onClearAllOrders();
+    }
+    setShowClearConfirmModal(false);
+    setClearSuccessToast('تم تفريغ وحذف جميع الطلبات من السجل بنجاح!');
+    setTimeout(() => setClearSuccessToast(''), 4500);
+  };
+
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
@@ -286,7 +303,13 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
 
     const trimmedNewPin = newPinInput.trim();
     if (!trimmedNewPin || trimmedNewPin.length < 4) {
-      setPasswordError('كلمة السر الجديدة يجب أن تكون 4 خانات على الأقل (أرقام أو حروف)');
+      setPasswordError('كلمة السر الجديدة يجب أن تكون 4 أرقام على الأقل (أرقام فقط)');
+      return;
+    }
+
+    // Enforce numbers only (no letters)
+    if (!/^\d+$/.test(trimmedNewPin)) {
+      setPasswordError('عفواً، كلمة السر يجب أن تتكون من أرقام فقط من غير أي حروف');
       return;
     }
 
@@ -514,6 +537,51 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                 <span>تأكيد الحذف</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Clear All Orders Confirmation Banner (In-App Modal / Banner - No window.confirm) */}
+        {showClearConfirmModal && (
+          <div className="p-3.5 sm:p-5 bg-red-100 border-b-2 border-red-400 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3 animate-fadeIn shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center shrink-0 text-lg shadow-sm">
+                <i className="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div className="text-right">
+                <h4 className="font-bold text-red-950 text-xs sm:text-sm">
+                  تأكيد تفريغ وحذف سجل الطلبات بالكامل ({orders.length} طلب):
+                </h4>
+                <p className="text-[11px] text-red-800">
+                  هل أنت متأكد من مسح جميع الطلبات من السجل؟ ستصبح قائمة الطلبات فارغة تماماً.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirmModal(false)}
+                className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-800 text-xs font-bold rounded-xl border border-gray-300 transition-colors cursor-pointer"
+              >
+                إلغاء وتراجع
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteClearAll}
+                className="px-5 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <i className="fa-solid fa-trash-can text-xs"></i>
+                <span>نعم، تفريغ السجل نهائياً</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Clear Success Toast */}
+        {clearSuccessToast && (
+          <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-bold text-center flex items-center justify-center gap-2 animate-fadeIn shrink-0 shadow-md">
+            <i className="fa-solid fa-circle-check text-emerald-200 text-base"></i>
+            <span>{clearSuccessToast}</span>
           </div>
         )}
 
@@ -758,6 +826,19 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                   <span>بطاقات</span>
                 </button>
               </div>
+
+              {/* Clear All Orders Shortcut Button in Toolbar */}
+              {orders.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirmModal(true)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer flex items-center gap-1"
+                  title="تفريغ ومسح سجل الطلبات"
+                >
+                  <i className="fa-solid fa-trash-can text-red-500 text-[10px]"></i>
+                  <span>تفريغ السجل</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1263,13 +1344,10 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {onClearAllOrders && orders.length > 0 && (
+            {orders.length > 0 && (
               <button
-                onClick={() => {
-                  if (window.confirm('هل أنت متأكد من تفريغ وحذف جميع الطلبات المسجلة من السجل؟')) {
-                    onClearAllOrders();
-                  }
-                }}
+                type="button"
+                onClick={() => setShowClearConfirmModal(true)}
                 className="px-3.5 py-2 bg-red-100 hover:bg-red-200 text-red-800 font-bold text-xs rounded-xl border border-red-300 transition-colors cursor-pointer flex items-center gap-1.5"
                 title="تفريغ ومسح سجل الطلبات"
               >
@@ -1462,7 +1540,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                 تغيير كلمة سر المكتب
               </h3>
               <p className="text-xs text-[#E8DEC8] mt-1 font-tajawal">
-                تغيير كلمة السر أو الرمز (PIN) الذي يسجل به ثروت هارون للدخول إلى المكتب
+                تعيين كلمة سر جديدة للمكتب — أرقام فقط من غير حروف
               </p>
             </div>
 
@@ -1478,14 +1556,16 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
               {/* Current Password */}
               <div>
                 <label className="block text-xs font-bold text-[#6B5A4D] mb-1.5 text-right">
-                  كلمة السر الحالية:
+                  كلمة السر الحالية (أرقام فقط):
                 </label>
                 <div className="relative">
                   <input
                     type={showPasswordDetails ? 'text' : 'password'}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={currentPinInput}
                     onChange={(e) => {
-                      setCurrentPinInput(e.target.value);
+                      setCurrentPinInput(e.target.value.replace(/\D/g, ''));
                       setPasswordError('');
                     }}
                     placeholder="أدخل كلمة السر الحالية (الافتراضية: 00112275)"
@@ -1499,22 +1579,27 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
               {/* New Password */}
               <div>
                 <label className="block text-xs font-bold text-[#6B5A4D] mb-1.5 text-right">
-                  كلمة السر الجديدة:
+                  كلمة السر الجديدة (أرقام فقط):
                 </label>
                 <div className="relative">
                   <input
                     type={showPasswordDetails ? 'text' : 'password'}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={newPinInput}
                     onChange={(e) => {
-                      setNewPinInput(e.target.value);
+                      setNewPinInput(e.target.value.replace(/\D/g, ''));
                       setPasswordError('');
                     }}
-                    placeholder="اكتب كلمة السر الجديدة (4 أرقام أو أحرف)"
+                    placeholder="اكتب أرقام كلمة السر الجديدة (4 أرقام على الأقل)"
                     className="w-full text-right text-sm font-mono font-bold py-2.5 px-10 bg-white rounded-xl border border-[#D9CABB] text-[#2C1810] focus:border-[#C5A059] focus:outline-none"
                     required
                   />
                   <i className="fa-solid fa-key absolute left-3 top-1/2 -translate-y-1/2 text-[#C5A059] text-xs"></i>
                 </div>
+                <span className="text-[10px] text-[#8C7A6B] block mt-1">
+                  * مسموح بالأرقام فقط (0-9) ولا يُسمح بالحروف.
+                </span>
               </div>
 
               {/* Confirm New Password */}
@@ -1525,12 +1610,14 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                 <div className="relative">
                   <input
                     type={showPasswordDetails ? 'text' : 'password'}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={confirmPinInput}
                     onChange={(e) => {
-                      setConfirmPinInput(e.target.value);
+                      setConfirmPinInput(e.target.value.replace(/\D/g, ''));
                       setPasswordError('');
                     }}
-                    placeholder="أعد كتابة كلمة السر الجديدة"
+                    placeholder="أعد كتابة نفس الأرقام لتأكيدها"
                     className="w-full text-right text-sm font-mono font-bold py-2.5 px-10 bg-white rounded-xl border border-[#D9CABB] text-[#2C1810] focus:border-[#C5A059] focus:outline-none"
                     required
                   />

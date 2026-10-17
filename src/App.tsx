@@ -196,7 +196,6 @@ export default function App() {
   // Redeem 100 Points for 1kg Coffee Free Reward
   const handleRedeemLoyaltyReward = () => {
     if (loyaltyPoints < 100) {
-      alert('رصيدك الحالي أقل من 100 نقطة. اجمع المزيد من النقاط مع كل طلب!');
       return;
     }
 
