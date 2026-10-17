@@ -24,6 +24,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [transferNumber, setTransferNumber] = useState('');
   const [formError, setFormError] = useState('');
+  const [successInfo, setSuccessInfo] = useState<{ orderId: string; whatsappUrl: string; name: string } | null>(null);
 
   if (!isOpen) return null;
 
@@ -58,7 +59,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     // فتح الواتساب للمحمصة
     const whatsappUrl = `https://wa.me/201275075046?text=${message}`;
-    window.open(whatsappUrl, '_blank');
+    try {
+      window.open(whatsappUrl, '_blank');
+    } catch {
+      // ignore
+    }
 
     // حفظ الطلب في النظام لمكتب أستاذ ثروت
     const newOrder: Order = {
@@ -77,25 +82,69 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     onOrderSuccess(newOrder);
 
+    // عرض شاشة النجاح وتأكيد وصول الطلب للمكتب
+    setSuccessInfo({ orderId, whatsappUrl, name: customerName });
+
     // تصفير الخانات للطلب القادم
     setCustomerName('');
     setPhone('');
     setAddress('');
     setTransferNumber('');
     setPaymentMethod('cash');
-
-    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-[#FBF8F3] text-[#2C1810] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#C5A059]/30 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4 border-b border-[#E6D5BE] pb-3">
-          <h2 className="text-xl font-bold text-[#4A2C11]">إتمام الطلب وتأكيد الشراء</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-red-600 font-bold text-lg">✕</button>
+          <h2 className="text-xl font-bold text-[#4A2C11]">
+            {successInfo ? 'تم إرسال الطلب للمكتب بنجاح!' : 'إتمام الطلب وتأكيد الشراء'}
+          </h2>
+          <button onClick={() => { setSuccessInfo(null); onClose(); }} className="text-gray-500 hover:text-red-600 font-bold text-lg">✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {successInfo ? (
+          <div className="space-y-5 py-3 text-center animate-fadeIn">
+            <div className="w-16 h-16 mx-auto bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-3xl shadow-md border-2 border-emerald-300">
+              <i className="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-[#2C1810]">
+                مبروك يا {successInfo.name}! وصل طلبك إلى مكتب أستاذ ثروت هارون
+              </h3>
+              <p className="text-xs text-[#7A6958] mt-1 font-mono">
+                رقم الطلب: {successInfo.orderId}
+              </p>
+              <p className="text-xs text-[#5C4A3C] mt-2 leading-relaxed">
+                تم تسجيل الطلب في سجل الإدارة فوراً. يمكنك أيضاً تأكيد وإرسال تفاصيل الطلب مباشرة عبر الواتساب للمحمصة.
+              </p>
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <a
+                href={successInfo.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+              >
+                <i className="fa-brands fa-whatsapp text-lg"></i>
+                <span>فتح الواتساب لتأكيد الطلب الآن</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSuccessInfo(null);
+                  onClose();
+                }}
+                className="w-full py-2.5 bg-[#3E2723] hover:bg-[#2C1810] text-[#F3C07B] font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                إغلاق والعودة للمتجر
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2 animate-shake">
               <i className="fa-solid fa-circle-exclamation shrink-0 text-red-500"></i>
@@ -207,6 +256,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

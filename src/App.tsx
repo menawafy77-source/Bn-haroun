@@ -225,11 +225,8 @@ export default function App() {
     setIsCartOpen(true);
   };
 
-  // Order Success Handler ("ولما يدوس شراء كانه عمل طلب عادي ويتاكد علي الواتساب ونقاطه ينقص منها 100 نقطة")
+  // Order Success Handler (تحديث الطلبات وحفظها فورا لظهرورها في المكتب)
   const handleOrderSuccess = (newOrder: Order) => {
-    // Check if the order included the 100-pt reward item
-    const hasReward = newOrder.items.some((item) => item.isLoyaltyReward);
-
     // Calculate points earned on regular purchased items (1 pt for 100g, 3 pts for 250g)
     const pointsEarned = newOrder.items
       .filter((item) => !item.isLoyaltyReward)
@@ -238,18 +235,32 @@ export default function App() {
         return sum + pts * item.quantity;
       }, 0);
 
+    // إضافة نقاط معلقة للطلب الجديد عشان أستاذ ثروت يعتمدها
+    newOrder.pointsEarned = pointsEarned;
+
+    setOrders((prev) => {
+      const updatedOrders = [newOrder, ...prev];
+      // حفظ الطلبات مباشرة في localStorage عشان المكتب يقراها حتى لو حصل تحديث للصفحة
+      try {
+        localStorage.setItem('haroun_orders', JSON.stringify(updatedOrders));
+      } catch (e) {
+        console.error('Error saving orders', e);
+      }
+      return updatedOrders;
+    });
+
+    // خصم أو إضافة نقاط الولاء أو تجهيزها للاعتماد
+    const hasReward = newOrder.items.some((item) => item.isLoyaltyReward);
+
     setLoyaltyPoints((prev) => {
       let updated = prev;
       if (hasReward) {
         // Deduct 100 points for the redeemed free kilo
         updated = Math.max(0, updated - 100);
       }
-      // "النقاط متتضفش لحساب العميل غير لما الطلب يتاكد من استاذ ثروت"
-      // New pointsEarned will be added only after Mr. Tharwat confirms the order in the office
       return updated;
     });
 
-    setOrders((prev) => [newOrder, ...prev]);
     setCartItems([]);
   };
 
