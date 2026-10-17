@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { STORE_CONTACT } from '../data/coffeeData';
 
 interface NavbarProps {
   cartCount: number;
@@ -175,6 +176,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <i className="fas fa-search text-base"></i>
             </button>
+
+
 
             {/* زر السلة */}
             <button

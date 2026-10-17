@@ -6,6 +6,7 @@ export const STORE_CONTACT = {
   phone: '01275075046',
   formattedPhone: '01275075046',
   whatsappUrl: 'https://wa.me/201275075046',
+  facebookUrl: 'https://www.facebook.com/Brandworid/',
   instapayAccount: '01206027305',
   vodafoneCashNumber: '01002563614',
   address: 'مصر - الجيزة - مدينة السادس من أكتوبر',

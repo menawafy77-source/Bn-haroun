@@ -74,6 +74,21 @@ export const ContactSection: React.FC = () => {
                 </div>
               </a>
 
+              <a
+                href={STORE_CONTACT.facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-4 rounded-2xl bg-white border border-[#EADBCE] flex items-center gap-4 hover:border-[#1877F2] transition-colors shadow-sm block group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-[#1877F2] text-white flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
+                  <i className="fa-brands fa-facebook-f"></i>
+                </div>
+                <div>
+                  <span className="text-xs text-[#7A6958] font-bold block">صفحتنا الرسمية على فيسبوك:</span>
+                  <span className="text-sm font-bold text-[#1877F2]">facebook.com/Brandworid</span>
+                </div>
+              </a>
+
               <div className="p-4 rounded-2xl bg-white border border-[#EADBCE] flex items-center gap-4 shadow-sm">
                 <div className="w-12 h-12 rounded-2xl bg-[#FBF8F3] text-[#8C5E35] flex items-center justify-center text-xl shrink-0 border border-[#DECFBE]">
                   <i className="fa-regular fa-clock"></i>

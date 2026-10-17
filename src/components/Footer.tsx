@@ -78,20 +78,31 @@ export const Footer: React.FC<FooterProps> = ({
               محامص بن هارون المتخصصة في تحميص وطحن البن العربي والتركي الأصيل. نجمع بين أحدث ماكينات التحميص الحرفية وسر الخلطة التراثية بالحبهان الأخضر الهندي والمستكة الطبيعية.
             </p>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <a
                 href={STORE_CONTACT.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2"
+                className="px-3.5 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2 shadow-sm"
               >
                 <i className="fa-brands fa-whatsapp text-sm"></i>
                 <span>طلب سريع عبر واتساب</span>
               </a>
 
               <a
+                href={STORE_CONTACT.facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2.5 bg-[#1877F2] hover:bg-[#166fe5] text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2 shadow-sm"
+                title="تابع صفحتنا الرسمية على فيسبوك"
+              >
+                <i className="fa-brands fa-facebook text-sm"></i>
+                <span>صفحتنا على فيسبوك</span>
+              </a>
+
+              <a
                 href={`tel:${STORE_CONTACT.phone}`}
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2"
+                className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2"
               >
                 <i className="fa-solid fa-phone text-[#C5A059]"></i>
                 <bdi dir="ltr" className="tabular-nums font-mono font-bold tracking-wider select-all">

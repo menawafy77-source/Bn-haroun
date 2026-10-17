@@ -22,6 +22,7 @@ import { OwnerSection } from './components/OwnerSection';
 import { OwnerDashboardModal } from './components/OwnerDashboardModal';
 import { OwnerPinModal } from './components/OwnerPinModal';
 import { Footer } from './components/Footer';
+import { FacebookBanner } from './components/FacebookBanner';
 
 import {
   Product,
@@ -407,6 +408,8 @@ export default function App() {
             onLockDashboard={handleLockOwnerDashboard}
           />
         )}
+
+        <FacebookBanner />
 
         {/* 9. Contact & Hotline Section (اتصل بنا والطلب السريع) */}
         <ContactSection />
