@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Order, CartItem } from '../types';
 import { normalizeOrder } from '../utils/orderUtils';
+import { saveOrderToDb } from '../services/apiOrderService';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -80,6 +81,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     } catch (err) {
       console.error("فشل حفظ الطلب في ذاكرة المتصفح:", err);
     }
+
+    // حفظ في قاعدة بيانات السيرفر المركزية لضمان وصول الطلب عبر الأجهزة والموبايل
+    saveOrderToDb(newOrder);
 
     // 5. إبلاغ التطبيق بالطلب الجديد لتحديث الشاشة فوراً
     onOrderSuccess(newOrder);

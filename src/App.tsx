@@ -25,6 +25,13 @@ import { Footer } from './components/Footer';
 import { FacebookBanner } from './components/FacebookBanner';
 import { supabase } from './supabaseClient';
 import { normalizeOrder } from './utils/orderUtils';
+import {
+  fetchOrdersFromDb,
+  saveOrderToDb,
+  updateOrderStatusInDb,
+  deleteOrderFromDb,
+  clearAllOrdersFromDb,
+} from './services/apiOrderService';
 
 import {
   Product,
@@ -122,65 +129,42 @@ export default function App() {
     }
   }, [orders]);
 
-  // Fetch orders from Supabase with safe merging and Realtime listening
+  // Fetch orders from our Express Server Database (/api/orders) + background polling for real-time cross-device updates
   useEffect(() => {
     let isMounted = true;
 
-    const fetchOrders = async () => {
+    const loadOrders = async () => {
       try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.warn('Supabase fetch notice (using local offline store):', error.message);
-          return;
-        }
-
-        if (data && Array.isArray(data) && isMounted) {
-          const remoteNormalized = data.map(normalizeOrder);
+        const serverOrders = await fetchOrdersFromDb();
+        if (serverOrders.length > 0 && isMounted) {
           setOrders((currentLocal) => {
             const map = new Map<string, Order>();
-            // Remote orders first
-            remoteNormalized.forEach((ord) => map.set(ord.id, ord));
-            // Local orders take precedence for instant updates
-            currentLocal.forEach((ord) => map.set(ord.id, ord));
+            // Add server orders
+            serverOrders.forEach((o) => map.set(o.id, o));
+            // Keep any local orders not yet on server
+            currentLocal.forEach((o) => {
+              if (!map.has(o.id)) {
+                map.set(o.id, o);
+                saveOrderToDb(o); // background sync up
+              }
+            });
             return Array.from(map.values());
           });
         }
       } catch (err) {
-        console.warn('Supabase connection warning:', err);
+        console.warn('Load orders check:', err);
       }
     };
 
-    fetchOrders();
+    // Initial load
+    loadOrders();
 
-    // الاستماع لأي طلب جديد يحدث في اللحظة الحالية (Realtime)
-    const subscription = supabase
-      .channel('public:orders')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders' },
-        (payload) => {
-          if (payload.new && isMounted) {
-            const incoming = normalizeOrder(payload.new);
-            setOrders((prev) => {
-              if (prev.some((o) => o.id === incoming.id)) return prev;
-              return [incoming, ...prev];
-            });
-          }
-        }
-      )
-      .subscribe();
+    // Auto-poll every 3.5 seconds to receive orders from any other phone or customer in real time!
+    const interval = setInterval(loadOrders, 3500);
 
     return () => {
       isMounted = false;
-      try {
-        supabase.removeChannel(subscription);
-      } catch {
-        // ignore
-      }
+      clearInterval(interval);
     };
   }, []);
 
@@ -315,13 +299,19 @@ export default function App() {
     // 3. تصفير السلة
     setCartItems([]);
 
-    // 4. الحفظ في Supabase في الخلفية بأمان تام
+    // 4. الحفظ فوراً في قاعدة بيانات السيرفر الحقيقية المشتركة (/api/orders)
+    try {
+      await saveOrderToDb(newOrder);
+    } catch (err) {
+      console.warn('Server DB save note:', err);
+    }
+
+    // 5. محاولة إرسال إضافية إلى Supabase في الخلفية إن كانت متاحة
     try {
       const transferNumberVal = newOrder.notes?.includes('رقم التحويل:')
         ? newOrder.notes.replace('رقم التحويل: ', '').trim()
         : null;
 
-      // إرسال كائن يدعم جميع التسميات المحتملة لأعمدة جدول orders
       const dbPayload: any = {
         id: newOrder.id,
         orderNumber: newOrder.orderNumber,
@@ -341,14 +331,9 @@ export default function App() {
         date: newOrder.date,
       };
 
-      const { data, error } = await supabase.from('orders').insert([dbPayload]).select();
-      if (error) {
-        console.warn('Supabase sync note (order is safely saved locally):', error.message);
-      } else {
-        console.log('Order successfully synced to Supabase:', data);
-      }
-    } catch (err) {
-      console.warn('Network sync notice (order is safe in local storage):', err);
+      await supabase.from('orders').insert([dbPayload]);
+    } catch {
+      // ignore
     }
   };
 
@@ -368,10 +353,12 @@ export default function App() {
       })
     );
 
+    // Update server database
+    updateOrderStatusInDb(orderId, newStatus);
     try {
       await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-    } catch (err) {
-      console.warn('Supabase status update note:', err);
+    } catch {
+      // ignore
     }
   };
 
@@ -393,24 +380,28 @@ export default function App() {
       })
     );
 
+    // Update server database
+    updateOrderStatusInDb(orderId, 'delivered', true);
     try {
       await supabase.from('orders').update({ status: 'delivered', pointsCredited: true }).eq('id', orderId);
-    } catch (err) {
-      console.warn('Supabase points update note:', err);
+    } catch {
+      // ignore
     }
   };
 
   const handleDeleteOrder = async (orderId: string) => {
     setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
+    deleteOrderFromDb(orderId);
     try {
       await supabase.from('orders').delete().eq('id', orderId);
-    } catch (err) {
-      console.warn('Supabase delete note:', err);
+    } catch {
+      // ignore
     }
   };
 
-  const handleClearAllOrders = () => {
+  const handleClearAllOrders = async () => {
     setOrders([]);
+    clearAllOrdersFromDb();
     try {
       localStorage.setItem('haroun_orders', JSON.stringify([]));
       localStorage.removeItem('haroun_orders');
@@ -422,11 +413,19 @@ export default function App() {
   const handleAddManualOrder = async (rawOrder: Order) => {
     const newOrder = normalizeOrder(rawOrder);
     setOrders((prev) => [newOrder, ...prev]);
+    saveOrderToDb(newOrder);
 
     try {
       await supabase.from('orders').insert([newOrder]);
-    } catch (err) {
-      console.warn('Supabase manual order note:', err);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleRefreshOrders = async () => {
+    const serverOrders = await fetchOrdersFromDb();
+    if (serverOrders.length > 0) {
+      setOrders(serverOrders);
     }
   };
 
@@ -530,6 +529,7 @@ export default function App() {
             onConfirmOrderPoints={handleConfirmOrderPoints}
             onDeleteOrder={handleDeleteOrder}
             onLockDashboard={handleLockOwnerDashboard}
+            onRefreshOrders={handleRefreshOrders}
           />
         )}
 
@@ -620,6 +620,7 @@ export default function App() {
         onClearAllOrders={handleClearAllOrders}
         onAddManualOrder={handleAddManualOrder}
         onLockDashboard={handleLockOwnerDashboard}
+        onRefreshOrders={handleRefreshOrders}
       />
 
       {/* Floating Shortcut for Shop Owner (Appears after first unlock) */}

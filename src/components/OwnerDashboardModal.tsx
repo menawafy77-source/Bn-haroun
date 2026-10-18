@@ -12,6 +12,7 @@ interface OwnerDashboardModalProps {
   onClearAllOrders?: () => void;
   onAddManualOrder?: (order: Order) => void;
   onLockDashboard?: () => void;
+  onRefreshOrders?: () => void;
 }
 
 export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
@@ -24,6 +25,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   onClearAllOrders,
   onAddManualOrder,
   onLockDashboard,
+  onRefreshOrders,
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'customers'>('orders');
   const [searchTerm, setSearchTerm] = useState('');
@@ -471,6 +473,16 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {onRefreshOrders && (
+              <button
+                onClick={onRefreshOrders}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="تحديث قائمة الطلبات من قاعدة البيانات المركزية فوراً"
+              >
+                <i className="fa-solid fa-arrows-rotate text-xs"></i>
+                <span>تحديث الطلبات</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 setPasswordError('');

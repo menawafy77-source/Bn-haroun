@@ -8,6 +8,7 @@ interface OwnerSectionProps {
   onConfirmOrderPoints?: (orderId: string) => void;
   onDeleteOrder?: (orderId: string) => void;
   onLockDashboard?: () => void;
+  onRefreshOrders?: () => void;
 }
 
 export const OwnerSection: React.FC<OwnerSectionProps> = ({
@@ -16,6 +17,7 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
   onUpdateOrderStatus,
   onDeleteOrder,
   onLockDashboard,
+  onRefreshOrders,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'placed' | 'delivered'>('all');
@@ -88,6 +90,17 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
               <i className="fa-solid fa-key"></i>
               <span>تغيير كلمة السر</span>
             </button>
+
+            {onRefreshOrders && (
+              <button
+                onClick={onRefreshOrders}
+                className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+                title="تحديث قائمة الطلبات من قاعدة البيانات المركزية فوراً"
+              >
+                <i className="fa-solid fa-arrows-rotate"></i>
+                <span>تحديث الطلبات</span>
+              </button>
+            )}
 
             <button
               onClick={onOpenDashboard}
