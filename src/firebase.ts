@@ -4,8 +4,11 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// الاتصال المباشر بقاعدة البيانات لضمان المزامنة الفورية بين الأجهزة
-export const db = getFirestore(app);
+// Initialize Firestore with explicit databaseId if specified in firebase-applet-config.json
+export const db =
+  firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)'
+    ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+    : getFirestore(app);
 
 export async function testFirestoreConnection() {
   try {
