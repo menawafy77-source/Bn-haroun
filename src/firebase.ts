@@ -4,7 +4,7 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// الاتصال المباشر بقاعدة بيانات Firestore الافتراضية (لتجنب أي تشتت أو اختلاف بين الأجهزة)
+// الاتصال المباشر بقاعدة البيانات لضمان المزامنة الفورية بين الأجهزة
 export const db = getFirestore(app);
 
 export async function testFirestoreConnection() {
