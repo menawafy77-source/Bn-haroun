@@ -4,11 +4,8 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with the provisioned database ID
-export const db =
-  firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)'
-    ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-    : getFirestore(app);
+// الاتصال المباشر بقاعدة بيانات Firestore الافتراضية (لتجنب أي تشتت أو اختلاف بين الأجهزة)
+export const db = getFirestore(app);
 
 export async function testFirestoreConnection() {
   try {
