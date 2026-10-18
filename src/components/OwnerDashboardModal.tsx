@@ -89,7 +89,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
           city: ord.customerCity?.trim(),
           address: ord.customerAddress?.trim(),
           totalOrders: 1,
-          totalSpent: ord.total,
+          totalSpent: Number(ord.total) || 0,
           confirmedPoints: isCredited ? points : 0,
           pendingPoints: isCredited ? 0 : points,
           totalPoints: points,
@@ -98,7 +98,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
         });
       } else {
         existing.totalOrders += 1;
-        existing.totalSpent += ord.total;
+        existing.totalSpent += Number(ord.total) || 0;
         if (isCredited) {
           existing.confirmedPoints += points;
         } else {
@@ -137,7 +137,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
       (order.customerPhone || '').includes(term) ||
       (order.orderNumber || '').toLowerCase().includes(term) ||
       (order.date || '').toLowerCase().includes(term) ||
-      order.items.some((item) => item.productName.toLowerCase().includes(term));
+      (order.items || []).some((item) => (item?.productName || '').toLowerCase().includes(term));
 
     const matchesStatus =
       statusFilter === 'all'
@@ -160,13 +160,13 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   });
 
   // Calculate Financial Summary ("مجموع كل الفلوس والمبيعات")
-  const totalRevenue = orders.reduce((sum, ord) => sum + ord.total, 0);
+  const totalRevenue = orders.reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
   const deliveredRevenue = orders
     .filter((o) => o.status === 'delivered')
-    .reduce((sum, ord) => sum + ord.total, 0);
+    .reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
   const pendingRevenue = orders
     .filter((o) => o.status !== 'delivered')
-    .reduce((sum, ord) => sum + ord.total, 0);
+    .reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
   const totalOrdersCount = orders.length;
   const uniqueCustomersCount = customerSummaries.length;
 
@@ -174,9 +174,9 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   const totalGramsSold = orders.reduce((sum, ord) => {
     return (
       sum +
-      ord.items.reduce((itemSum, item) => {
-        const grams = item.weight === '100g' ? 100 : item.weight === '1000g' ? 1000 : 250;
-        return itemSum + grams * item.quantity;
+      (ord.items || []).reduce((itemSum, item) => {
+        const grams = item?.weight === '100g' ? 100 : item?.weight === '1000g' ? 1000 : 250;
+        return itemSum + grams * (Number(item?.quantity) || 1);
       }, 0)
     );
   }, 0);

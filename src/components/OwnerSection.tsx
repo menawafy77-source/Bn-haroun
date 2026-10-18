@@ -24,13 +24,13 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
 
   // Financial summary ("مجموع كل الفلوس والمبيعات")
-  const totalRevenue = orders.reduce((sum, ord) => sum + ord.total, 0);
+  const totalRevenue = orders.reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
   const deliveredRevenue = orders
     .filter((o) => o.status === 'delivered')
-    .reduce((sum, ord) => sum + ord.total, 0);
+    .reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
   const pendingRevenue = orders
     .filter((o) => o.status !== 'delivered')
-    .reduce((sum, ord) => sum + ord.total, 0);
+    .reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
   const totalOrders = orders.length;
 
   // Filtered orders

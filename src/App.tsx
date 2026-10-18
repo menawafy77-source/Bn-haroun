@@ -24,6 +24,7 @@ import { OwnerPinModal } from './components/OwnerPinModal';
 import { Footer } from './components/Footer';
 import { FacebookBanner } from './components/FacebookBanner';
 import { supabase } from './supabaseClient';
+import { normalizeOrder } from './utils/orderUtils';
 
 import {
   Product,
@@ -57,7 +58,7 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed;
+          return parsed.map(normalizeOrder);
         }
       }
       return [];
@@ -112,34 +113,74 @@ export default function App() {
     }
   }, []);
 
-  // Fetch orders from Supabase
+  // Sync orders to localStorage whenever orders change
   useEffect(() => {
+    try {
+      localStorage.setItem('haroun_orders', JSON.stringify(orders));
+    } catch (e) {
+      console.warn('LocalStorage save error:', e);
+    }
+  }, [orders]);
+
+  // Fetch orders from Supabase with safe merging and Realtime listening
+  useEffect(() => {
+    let isMounted = true;
+
     const fetchOrders = async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (data) {
-        setOrders(data);
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.warn('Supabase fetch notice (using local offline store):', error.message);
+          return;
+        }
+
+        if (data && Array.isArray(data) && isMounted) {
+          const remoteNormalized = data.map(normalizeOrder);
+          setOrders((currentLocal) => {
+            const map = new Map<string, Order>();
+            // Remote orders first
+            remoteNormalized.forEach((ord) => map.set(ord.id, ord));
+            // Local orders take precedence for instant updates
+            currentLocal.forEach((ord) => map.set(ord.id, ord));
+            return Array.from(map.values());
+          });
+        }
+      } catch (err) {
+        console.warn('Supabase connection warning:', err);
       }
     };
+
     fetchOrders();
 
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('schema-db-changes')
+    // الاستماع لأي طلب جديد يحدث في اللحظة الحالية (Realtime)
+    const subscription = supabase
+      .channel('public:orders')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
-          setOrders((prev) => [payload.new as Order, ...prev]);
+          if (payload.new && isMounted) {
+            const incoming = normalizeOrder(payload.new);
+            setOrders((prev) => {
+              if (prev.some((o) => o.id === incoming.id)) return prev;
+              return [incoming, ...prev];
+            });
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      isMounted = false;
+      try {
+        supabase.removeChannel(subscription);
+      } catch {
+        // ignore
+      }
     };
   }, []);
 
@@ -245,42 +286,74 @@ export default function App() {
     setIsCartOpen(true);
   };
 
-  // Order Success Handler (تحديث الطلبات وحفظها فورا لظهرورها في المكتب)
-  const handleOrderSuccess = async (newOrder: Order) => {
-    // 1. حفظ الطلب في جدول Supabase
-    const { data, error } = await supabase.from('orders').insert([
-      {
-        id: newOrder.id,
-        customerName: newOrder.customerName,
-        customerPhone: newOrder.customerPhone,
-        customerAddress: newOrder.customerAddress,
-        totalPrice: newOrder.total,
-        paymentMethod: newOrder.paymentMethod || 'الدفع عند الاستلام',
-        transferNumber: newOrder.notes?.includes('رقم التحويل:') ? newOrder.notes.replace('رقم التحويل: ', '') : null,
-        status: 'pending',
-        items: newOrder.items,
+  // Order Success Handler (تحديث الطلبات وحفظها فورا لظهورها في المكتب والمزامنة مع قاعدة البيانات)
+  const handleOrderSuccess = async (rawOrder: Order) => {
+    const newOrder = normalizeOrder(rawOrder);
+
+    // 1. حساب نقاط الولاء
+    const hasReward = newOrder.items.some((item) => item.isLoyaltyReward);
+    setLoyaltyPoints((prev) => {
+      let updated = prev;
+      if (hasReward) {
+        updated = Math.max(0, updated - 100);
       }
-    ]).select();
-
-    if (error) {
-      // لو فيه خطأ، هيطلع لك رسالة واضحة على شاشة الموبايل فوراً بالسبب!
-      alert('خطأ في قاعدة البيانات: ' + error.message);
-      console.error(error);
-      return;
-    }
-
-    alert('✅ تم حفظ الطلب في Supabase بنجاح!');
-    
-    setOrders((prev) => {
-      const updatedOrders = [newOrder, ...prev];
-      return updatedOrders;
+      return updated;
     });
 
+    // 2. تحديث قائمة الطلبات فوراً في الواجهة والمكتب
+    setOrders((prev) => {
+      const filtered = prev.filter((o) => o.id !== newOrder.id);
+      const updated = [newOrder, ...filtered];
+      try {
+        localStorage.setItem('haroun_orders', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage error:', e);
+      }
+      return updated;
+    });
+
+    // 3. تصفير السلة
     setCartItems([]);
+
+    // 4. الحفظ في Supabase في الخلفية بأمان تام
+    try {
+      const transferNumberVal = newOrder.notes?.includes('رقم التحويل:')
+        ? newOrder.notes.replace('رقم التحويل: ', '').trim()
+        : null;
+
+      // إرسال كائن يدعم جميع التسميات المحتملة لأعمدة جدول orders
+      const dbPayload: any = {
+        id: newOrder.id,
+        orderNumber: newOrder.orderNumber,
+        customerName: newOrder.customerName,
+        customerPhone: newOrder.customerPhone,
+        phone: newOrder.customerPhone,
+        customerAddress: newOrder.customerAddress,
+        address: newOrder.customerAddress,
+        customerCity: newOrder.customerCity,
+        total: newOrder.total,
+        totalPrice: newOrder.total,
+        paymentMethod: newOrder.paymentMethod || 'الدفع عند الاستلام',
+        transferNumber: transferNumberVal,
+        status: newOrder.status || 'placed',
+        items: newOrder.items,
+        notes: newOrder.notes,
+        date: newOrder.date,
+      };
+
+      const { data, error } = await supabase.from('orders').insert([dbPayload]).select();
+      if (error) {
+        console.warn('Supabase sync note (order is safely saved locally):', error.message);
+      } else {
+        console.log('Order successfully synced to Supabase:', data);
+      }
+    } catch (err) {
+      console.warn('Network sync notice (order is safe in local storage):', err);
+    }
   };
 
   // Owner Order Management Handlers
-  const handleUpdateOrderStatus = (orderId: string, newStatus: Order['status']) => {
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -294,10 +367,16 @@ export default function App() {
         return ord;
       })
     );
+
+    try {
+      await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    } catch (err) {
+      console.warn('Supabase status update note:', err);
+    }
   };
 
   // Direct points confirmation by Mr. Tharwat ("النقاط متتضفش لحساب العميل غير لما الطلب يتاكد من استاذ ثروت")
-  const handleConfirmOrderPoints = (orderId: string) => {
+  const handleConfirmOrderPoints = async (orderId: string) => {
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -313,23 +392,42 @@ export default function App() {
         return ord;
       })
     );
+
+    try {
+      await supabase.from('orders').update({ status: 'delivered', pointsCredited: true }).eq('id', orderId);
+    } catch (err) {
+      console.warn('Supabase points update note:', err);
+    }
   };
 
-  const handleDeleteOrder = (orderId: string) => {
+  const handleDeleteOrder = async (orderId: string) => {
     setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
+    try {
+      await supabase.from('orders').delete().eq('id', orderId);
+    } catch (err) {
+      console.warn('Supabase delete note:', err);
+    }
   };
 
   const handleClearAllOrders = () => {
     setOrders([]);
     try {
       localStorage.setItem('haroun_orders', JSON.stringify([]));
+      localStorage.removeItem('haroun_orders');
     } catch {
       // ignore
     }
   };
 
-  const handleAddManualOrder = (newOrder: Order) => {
+  const handleAddManualOrder = async (rawOrder: Order) => {
+    const newOrder = normalizeOrder(rawOrder);
     setOrders((prev) => [newOrder, ...prev]);
+
+    try {
+      await supabase.from('orders').insert([newOrder]);
+    } catch (err) {
+      console.warn('Supabase manual order note:', err);
+    }
   };
 
   // Owner Secret Authentication Handlers

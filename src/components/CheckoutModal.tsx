@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Order, CartItem } from '../types';
+import { normalizeOrder } from '../utils/orderUtils';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -51,27 +52,30 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         return sum + pts * item.quantity;
       }, 0);
 
-    // 3. إنشاء كائن الطلب الجديد بالكامل
-    const newOrder: Order = {
+    // 3. إنشاء كائن الطلب الجديد بالكامل ومطابقته بدقة
+    const orderNumber = orderId.replace('ORD-', 'HRN-');
+    const newOrder: Order = normalizeOrder({
       id: orderId,
+      orderNumber,
       customerName,
       customerPhone: phone,
       customerAddress: address,
       items: [...items],
       total: subtotal,
+      subtotal,
+      paymentMethod: paymentLabel,
+      notes: paymentMethod !== 'cash' ? `رقم التحويل: ${transferNumber}` : undefined,
+      pointsEarned,
+      pointsCredited: false,
       status: 'placed',
       date: new Date().toLocaleString('ar-EG'),
-      paymentMethod: paymentLabel as any,
-      notes: paymentMethod !== 'cash' ? `رقم التحويل: ${transferNumber}` : undefined,
-      pointsEarned: pointsEarned,
-      pointsCredited: false,
-    } as any;
+    });
 
     // 4. 🔥 الحفظ الفوري المباشر في localStorage لضمان ظهوره في المكتب حتى لو ما اتداسش واتساب 🔥
     try {
       const savedOrders = localStorage.getItem('haroun_orders');
       const currentOrders = savedOrders ? JSON.parse(savedOrders) : [];
-      const updatedOrders = [newOrder, ...currentOrders];
+      const updatedOrders = [newOrder, ...currentOrders.filter((o: any) => o.id !== newOrder.id)];
       localStorage.setItem('haroun_orders', JSON.stringify(updatedOrders));
     } catch (err) {
       console.error("فشل حفظ الطلب في ذاكرة المتصفح:", err);
