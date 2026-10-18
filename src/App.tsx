@@ -32,6 +32,14 @@ import {
   deleteOrderFromDb,
   clearAllOrdersFromDb,
 } from './services/apiOrderService';
+import {
+  subscribeToFirestoreOrders,
+  saveOrderToFirestore,
+  updateOrderStatusInFirestore,
+  deleteOrderFromFirestore,
+  clearAllOrdersFromFirestore,
+} from './services/firestoreOrderService';
+import { testFirestoreConnection } from './firebase';
 
 import {
   Product,
@@ -129,7 +137,22 @@ export default function App() {
     }
   }, [orders]);
 
-  // Fetch orders from our Express Server Database (/api/orders) + background polling for real-time cross-device updates
+  // 1. Google Cloud Firestore Real-Time Cross-Device Sync (Global across all phones)
+  useEffect(() => {
+    testFirestoreConnection();
+
+    const unsubscribe = subscribeToFirestoreOrders((cloudOrders) => {
+      if (cloudOrders.length > 0) {
+        setOrders(cloudOrders);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // 2. Local Server Database Sync (/api/orders) + background polling
   useEffect(() => {
     let isMounted = true;
 
@@ -145,7 +168,8 @@ export default function App() {
             currentLocal.forEach((o) => {
               if (!map.has(o.id)) {
                 map.set(o.id, o);
-                saveOrderToDb(o); // background sync up
+                saveOrderToDb(o);
+                saveOrderToFirestore(o);
               }
             });
             return Array.from(map.values());
@@ -159,7 +183,7 @@ export default function App() {
     // Initial load
     loadOrders();
 
-    // Auto-poll every 3.5 seconds to receive orders from any other phone or customer in real time!
+    // Auto-poll every 3.5 seconds
     const interval = setInterval(loadOrders, 3500);
 
     return () => {
@@ -299,14 +323,13 @@ export default function App() {
     // 3. تصفير السلة
     setCartItems([]);
 
-    // 4. الحفظ فوراً في قاعدة بيانات السيرفر الحقيقية المشتركة (/api/orders)
-    try {
-      await saveOrderToDb(newOrder);
-    } catch (err) {
-      console.warn('Server DB save note:', err);
-    }
+    // 4. الحفظ فوراً في قاعدة بيانات Google Cloud Firestore العالمية المشتركة لجميع الهواتف
+    saveOrderToFirestore(newOrder);
 
-    // 5. محاولة إرسال إضافية إلى Supabase في الخلفية إن كانت متاحة
+    // 5. الحفظ أيضاً في قاعدة بيانات السيرفر المحلية (/api/orders) للاحتياط
+    saveOrderToDb(newOrder);
+
+    // 6. محاولة إرسال إضافية إلى Supabase في الخلفية إن كانت متاحة
     try {
       const transferNumberVal = newOrder.notes?.includes('رقم التحويل:')
         ? newOrder.notes.replace('رقم التحويل: ', '').trim()
@@ -353,6 +376,8 @@ export default function App() {
       })
     );
 
+    // Update in Firestore across all devices
+    updateOrderStatusInFirestore(orderId, newStatus);
     // Update server database
     updateOrderStatusInDb(orderId, newStatus);
     try {
@@ -380,6 +405,8 @@ export default function App() {
       })
     );
 
+    // Update in Firestore across all devices
+    updateOrderStatusInFirestore(orderId, 'delivered', true);
     // Update server database
     updateOrderStatusInDb(orderId, 'delivered', true);
     try {
@@ -391,6 +418,7 @@ export default function App() {
 
   const handleDeleteOrder = async (orderId: string) => {
     setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
+    deleteOrderFromFirestore(orderId);
     deleteOrderFromDb(orderId);
     try {
       await supabase.from('orders').delete().eq('id', orderId);
@@ -401,6 +429,7 @@ export default function App() {
 
   const handleClearAllOrders = async () => {
     setOrders([]);
+    clearAllOrdersFromFirestore();
     clearAllOrdersFromDb();
     try {
       localStorage.setItem('haroun_orders', JSON.stringify([]));
@@ -413,6 +442,7 @@ export default function App() {
   const handleAddManualOrder = async (rawOrder: Order) => {
     const newOrder = normalizeOrder(rawOrder);
     setOrders((prev) => [newOrder, ...prev]);
+    saveOrderToFirestore(newOrder);
     saveOrderToDb(newOrder);
 
     try {

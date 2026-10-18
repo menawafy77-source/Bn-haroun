@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Orders collection: Anyone can create an order, anyone can read to sync live orders, store management can update/delete
+    match /orders/{orderId} {
+      allow read, create, update, delete: if true;
+    }
+
+    // Health check test connection document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

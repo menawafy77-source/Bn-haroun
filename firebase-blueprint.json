@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Customer order placed in Haroun Coffee shop",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "date": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "customerCity": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "subtotal": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" },
+        "pointsEarned": { "type": "number" },
+        "pointsCredited": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "customerName", "customerPhone", "total", "items", "status"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "#/entities/Order",
+      "description": "Collection of coffee orders accessible for store management and live updates"
+    }
+  }
+}
