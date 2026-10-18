@@ -294,7 +294,7 @@ export default function App() {
     setIsCartOpen(true);
   };
 
-  // Order Success Handler (تحديث الطلبات وحفظها فورا لظهورها في المكتب والمزامنة مع قاعدة البيانات)
+  // Order Success Handler
   const handleOrderSuccess = async (rawOrder: Order) => {
     const newOrder = normalizeOrder(rawOrder);
 
@@ -308,7 +308,7 @@ export default function App() {
       return updated;
     });
 
-    // 2. تحديث قائمة الطلبات فوراً في الواجهة والمكتب
+    // 2. تحديث قائمة الطلبات فوراً في الواجهة
     setOrders((prev) => {
       const filtered = prev.filter((o) => o.id !== newOrder.id);
       const updated = [newOrder, ...filtered];
@@ -323,40 +323,13 @@ export default function App() {
     // 3. تصفير السلة
     setCartItems([]);
 
-    // 4. الحفظ فوراً في قاعدة بيانات Google Cloud Firestore العالمية المشتركة لجميع الهواتف
-    saveOrderToFirestore(newOrder);
-
-    // 5. الحفظ أيضاً في قاعدة بيانات السيرفر المحلية (/api/orders) للاحتياط
-    saveOrderToDb(newOrder);
-
-    // 6. محاولة إرسال إضافية إلى Supabase في الخلفية إن كانت متاحة
+    // 4. الحفظ الأساسي والمضمون في Firebase Firestore
     try {
-      const transferNumberVal = newOrder.notes?.includes('رقم التحويل:')
-        ? newOrder.notes.replace('رقم التحويل: ', '').trim()
-        : null;
-
-      const dbPayload: any = {
-        id: newOrder.id,
-        orderNumber: newOrder.orderNumber,
-        customerName: newOrder.customerName,
-        customerPhone: newOrder.customerPhone,
-        phone: newOrder.customerPhone,
-        customerAddress: newOrder.customerAddress,
-        address: newOrder.customerAddress,
-        customerCity: newOrder.customerCity,
-        total: newOrder.total,
-        totalPrice: newOrder.total,
-        paymentMethod: newOrder.paymentMethod || 'الدفع عند الاستلام',
-        transferNumber: transferNumberVal,
-        status: newOrder.status || 'placed',
-        items: newOrder.items,
-        notes: newOrder.notes,
-        date: newOrder.date,
-      };
-
-      await supabase.from('orders').insert([dbPayload]);
-    } catch {
-      // ignore
+      await saveOrderToFirestore(newOrder);
+      console.log('✅ تم حفظ الطلب في Firebase بنجاح');
+    } catch (error) {
+      console.error('❌ خطأ في حفظ الطلب بـ Firebase:', error);
+      alert('حدث خطأ أثناء حفظ الطلب، يرجى المحاولة مرة أخرى.');
     }
   };
 
