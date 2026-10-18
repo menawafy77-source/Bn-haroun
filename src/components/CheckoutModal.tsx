@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { Order, CartItem } from '../types';
 import { normalizeOrder } from '../utils/orderUtils';
-import { saveOrderToDb } from '../services/apiOrderService';
-import { saveOrderToFirestore } from '../services/firestoreOrderService';
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
   subtotal: number;
-  onOrderSuccess: (order: Order) => void;
+  onOrderSuccess: (order: Order) => Promise<void>;
 }
 
 type PaymentMethod = 'cash' | 'vodafone_cash' | 'instapay';
@@ -27,12 +25,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [transferNumber, setTransferNumber] = useState('');
   const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{ orderId: string; whatsappUrl: string; name: string } | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setFormError('');
 
     // 1. التحقق من رقم التحويل في حالة الدفع الإلكتروني
@@ -41,7 +41,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
-    const orderId = `ORD-${Date.now()}`;
+    const orderId = `ORD-${crypto.randomUUID()}`;
     const paymentLabel = 
       paymentMethod === 'vodafone_cash' ? 'فودافون كاش' :
       paymentMethod === 'instapay' ? 'إنستاباي' : 'الدفع عند الاستلام';
@@ -73,22 +73,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       date: new Date().toLocaleString('ar-EG'),
     });
 
-    // 4. 🔥 الحفظ الفوري المباشر في localStorage لضمان ظهوره في المكتب حتى لو ما اتداسش واتساب 🔥
+    // Confirm the single cloud write before showing success or clearing the cart.
+    setIsSubmitting(true);
     try {
-      const savedOrders = localStorage.getItem('haroun_orders');
-      const currentOrders = savedOrders ? JSON.parse(savedOrders) : [];
-      const updatedOrders = [newOrder, ...currentOrders.filter((o: any) => o.id !== newOrder.id)];
-      localStorage.setItem('haroun_orders', JSON.stringify(updatedOrders));
+      await onOrderSuccess(newOrder);
     } catch (err) {
-      console.error("فشل حفظ الطلب في ذاكرة المتصفح:", err);
+      setFormError(err instanceof Error ? err.message : 'تعذر حفظ الطلب. يرجى إعادة المحاولة.');
+      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // حفظ في قاعدة بيانات السيرفر المركزية وقاعدة بيانات Google Firestore لضمان وصول الطلب فوراً لجميع الهواتف
-    saveOrderToFirestore(newOrder);
-    saveOrderToDb(newOrder);
-
-    // 5. إبلاغ التطبيق بالطلب الجديد لتحديث الشاشة فوراً
-    onOrderSuccess(newOrder);
 
     // 6. تجهيز فتح الواتساب
     let message = `مرحباً بن هارون، أرغب في تأكيد طلبي:%0A` +
@@ -131,7 +125,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <h2 className="text-xl font-bold text-[#4A2C11]">
             {successInfo ? 'تم إرسال الطلب للمكتب بنجاح!' : 'إتمام الطلب وتأكيد الشراء'}
           </h2>
-          <button onClick={() => { setSuccessInfo(null); onClose(); }} className="text-gray-500 hover:text-red-600 font-bold text-lg">✕</button>
+          <button disabled={isSubmitting} onClick={() => { setSuccessInfo(null); onClose(); }} className="text-gray-500 hover:text-red-600 font-bold text-lg">✕</button>
         </div>
 
         {successInfo ? (
