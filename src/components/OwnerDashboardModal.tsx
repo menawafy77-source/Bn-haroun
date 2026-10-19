@@ -13,6 +13,8 @@ interface OwnerDashboardModalProps {
   onAddManualOrder?: (order: Order) => void;
   onLockDashboard?: () => void;
   onRefreshOrders?: () => void;
+  firestoreStatus?: 'connecting' | 'connected' | 'error';
+  firestoreError?: string;
 }
 
 export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
@@ -26,6 +28,8 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
   onAddManualOrder,
   onLockDashboard,
   onRefreshOrders,
+  firestoreStatus = 'connected',
+  firestoreError = '',
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'customers'>('orders');
   const [searchTerm, setSearchTerm] = useState('');
@@ -465,9 +469,21 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
                 <span className="bg-[#C5A059] text-[#2C1810] text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs">
                   مرحباً بك في المكتب
                 </span>
+                {firestoreStatus === 'connected' && (
+                  <span className="bg-emerald-800/80 text-emerald-200 border border-emerald-500/50 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>سحابي مباشر (Live Sync)</span>
+                  </span>
+                )}
+                {firestoreStatus === 'error' && (
+                  <span className="bg-red-800/90 text-red-200 border border-red-500 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                    <i className="fa-solid fa-triangle-exclamation text-xs"></i>
+                    <span>خطأ بالسحابة: {firestoreError}</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs sm:text-sm text-[#E8DEC8] font-tajawal mt-0.5">
-                مرحباً بحضرتك في مكتب إدارة بن هارون — جميع المبيعات، الطلبات، وبيانات المشترين محدثة وجاهزة أمامك.
+                مرحباً بحضرتك في مكتب إدارة بن هارون — جميع المبيعات، الطلبات، وبيانات المشترين محدثة وجاهزة أمامك عبر السحابة المركزية.
               </p>
             </div>
           </div>

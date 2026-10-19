@@ -9,6 +9,8 @@ interface OwnerSectionProps {
   onDeleteOrder?: (orderId: string) => void;
   onLockDashboard?: () => void;
   onRefreshOrders?: () => void;
+  firestoreStatus?: 'connecting' | 'connected' | 'error';
+  firestoreError?: string;
 }
 
 export const OwnerSection: React.FC<OwnerSectionProps> = ({
@@ -18,6 +20,8 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
   onDeleteOrder,
   onLockDashboard,
   onRefreshOrders,
+  firestoreStatus = 'connected',
+  firestoreError = '',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'placed' | 'delivered'>('all');
@@ -69,9 +73,29 @@ export const OwnerSection: React.FC<OwnerSectionProps> = ({
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3E2723] text-[#F3C07B] text-xs font-bold mb-3 shadow-xs">
-              <i className="fa-solid fa-briefcase text-[#C5A059]"></i>
-              <span>المكتب · ثروت هارون</span>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3E2723] text-[#F3C07B] text-xs font-bold shadow-xs">
+                <i className="fa-solid fa-briefcase text-[#C5A059]"></i>
+                <span>المكتب · ثروت هارون</span>
+              </div>
+              {firestoreStatus === 'connected' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>متصل بالسحابة المشتركة (Firestore Live)</span>
+                </span>
+              )}
+              {firestoreStatus === 'connecting' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300">
+                  <i className="fa-solid fa-spinner fa-spin text-xs"></i>
+                  <span>جاري المزامنة مع السحابة...</span>
+                </span>
+              )}
+              {firestoreStatus === 'error' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-bold border border-red-300">
+                  <i className="fa-solid fa-triangle-exclamation text-xs"></i>
+                  <span>خطأ في الاتصال: {firestoreError}</span>
+                </span>
+              )}
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-amiri text-[#2C1810]">
               المكتب · سجل طلبات ومبيعات ثروت هارون

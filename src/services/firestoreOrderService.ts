@@ -7,10 +7,6 @@ import {
   onSnapshot,
   query,
   getDocs,
-  getDocsFromServer,
-  serverTimestamp,
-  type QuerySnapshot,
-  type DocumentData,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Order } from '../types';
@@ -18,33 +14,32 @@ import { normalizeOrder } from '../utils/orderUtils';
 
 const ORDERS_COLLECTION = 'orders';
 
-function ordersFromSnapshot(snapshot: QuerySnapshot<DocumentData>): Order[] {
-  return snapshot.docs
-    .map((snapshotDoc) => {
-      const data = snapshotDoc.data({ serverTimestamps: 'estimate' });
-      const createdAt = data.createdAt ?? data.timestamp;
-      const time = typeof createdAt?.toMillis === 'function'
-        ? createdAt.toMillis()
-        : Date.parse(createdAt ?? '') || 0;
-      return { order: normalizeOrder({ ...data, id: snapshotDoc.id }), time };
-    })
-    .sort((a, b) => b.time - a.time || b.order.id.localeCompare(a.order.id))
-    .map(({ order }) => order);
-}
+/**
+ * Strips all undefined properties from an object so Firestore never throws
+ * "Unsupported field value: undefined"
+ */
+function sanitizeForFirestore(order: any): any {
+  const clean = JSON.parse(
+    JSON.stringify(order, (key, value) => (value === undefined ? null : value))
+  );
 
-export async function fetchFirestoreOrders(): Promise<Order[]> {
-  return ordersFromSnapshot(await getDocsFromServer(collection(db, ORDERS_COLLECTION)));
+  return {
+    ...clean,
+    notes: clean.notes || '',
+    customerCity: clean.customerCity || '',
+    customerAddress: clean.customerAddress || '',
+    timestamp: clean.timestamp || Date.now(),
+    createdAt: clean.createdAt || new Date().toISOString(),
+  };
 }
 
 /**
- * Real-time listener for Firestore orders collection.
- * Triggers callback immediately on initial load and whenever any new order is placed
- * from any phone, computer, or tablet worldwide!
+ * Real-time listener for Firestore orders collection across all phones & devices.
+ * Uses onSnapshot so any change in Firestore instantly reflects on every connected screen!
  */
 export function subscribeToFirestoreOrders(
   onOrdersReceived: (orders: Order[]) => void,
-  onError?: (err: unknown) => void,
-  onConnectionChange?: (fromCache: boolean) => void,
+  onError?: (err: any) => void
 ): () => void {
   try {
     const ordersCol = collection(db, ORDERS_COLLECTION);
@@ -52,46 +47,56 @@ export function subscribeToFirestoreOrders(
 
     const unsubscribe = onSnapshot(
       q,
-      { includeMetadataChanges: true },
       (snapshot) => {
-        onConnectionChange?.(snapshot.metadata.fromCache);
-        // Do not erase the last known orders with an unconfirmed, empty cache.
-        // A server-confirmed empty collection MUST clear deleted orders on all devices.
-        if (!snapshot.metadata.fromCache || !snapshot.empty) {
-          onOrdersReceived(ordersFromSnapshot(snapshot));
-        }
+        const ordersList: Order[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return normalizeOrder({ id: docSnap.id, ...data });
+        });
+
+        // Sort newest first by timestamp / createdAt / date
+        ordersList.sort((a, b) => {
+          const timeA = (a as any).timestamp || (a as any).createdAt || a.id;
+          const timeB = (b as any).timestamp || (b as any).createdAt || b.id;
+          return String(timeB).localeCompare(String(timeA));
+        });
+
+        console.log(`📡 [FIRESTORE REALTIME] Synced ${ordersList.length} orders across all devices.`);
+        onOrdersReceived(ordersList);
       },
       (err) => {
-        console.warn('Firestore onSnapshot error:', err);
+        console.error('❌ Firestore onSnapshot error:', err);
         if (onError) onError(err);
       }
     );
 
     return unsubscribe;
-  } catch (err) {
-    console.warn('Failed to setup Firestore listener:', err);
-    onError?.(err);
+  } catch (err: any) {
+    console.error('❌ Failed to setup Firestore listener:', err);
+    if (onError) onError(err);
     return () => {};
   }
 }
 
 /**
- * Saves an order directly to Google Cloud Firestore
+ * Saves an order directly to Google Cloud Firestore with sanitization.
+ * Returns detailed success or error message.
  */
-export async function saveOrderToFirestore(order: Order): Promise<boolean> {
+export async function saveOrderToFirestore(
+  order: Order
+): Promise<{ success: boolean; error?: string }> {
   try {
     const docRef = doc(db, ORDERS_COLLECTION, order.id);
-    const payload = {
-      // Orders are JSON data; strip optional undefined fields, including nested items.
-      ...JSON.parse(JSON.stringify(order)),
-      createdAt: serverTimestamp(),
-    };
+    const payload = sanitizeForFirestore(order);
+
     await setDoc(docRef, payload, { merge: true });
     console.log(`✅ [FIRESTORE] Order ${order.id} saved to Cloud Firestore successfully.`);
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('❌ [FIRESTORE] Failed to save order to Cloud Firestore:', err);
-    return false;
+    return {
+      success: false,
+      error: err?.message || 'فشل الاتصال بسحابة فايربيس لحفظ الطلب',
+    };
   }
 }
 
@@ -102,7 +107,7 @@ export async function updateOrderStatusInFirestore(
   orderId: string,
   newStatus: Order['status'],
   pointsCredited?: boolean
-): Promise<boolean> {
+): Promise<{ success: boolean; error?: string }> {
   try {
     const docRef = doc(db, ORDERS_COLLECTION, orderId);
     const updates: any = { status: newStatus };
@@ -110,42 +115,69 @@ export async function updateOrderStatusInFirestore(
       updates.pointsCredited = pointsCredited;
     }
     await updateDoc(docRef, updates);
-    console.log(`✅ [FIRESTORE] Order ${orderId} updated to ${newStatus}.`);
-    return true;
-  } catch (err) {
+    console.log(`✅ [FIRESTORE] Order ${orderId} status updated to ${newStatus}.`);
+    return { success: true };
+  } catch (err: any) {
     console.warn('Failed to update order in Firestore:', err);
-    return false;
+    return { success: false, error: err?.message };
   }
 }
 
 /**
  * Deletes an order from Firestore
  */
-export async function deleteOrderFromFirestore(orderId: string): Promise<boolean> {
+export async function deleteOrderFromFirestore(
+  orderId: string
+): Promise<{ success: boolean; error?: string }> {
   try {
     const docRef = doc(db, ORDERS_COLLECTION, orderId);
     await deleteDoc(docRef);
     console.log(`🗑️ [FIRESTORE] Order ${orderId} deleted.`);
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.warn('Failed to delete order from Firestore:', err);
-    return false;
+    return { success: false, error: err?.message };
   }
 }
 
 /**
  * Clears all orders from Firestore
  */
-export async function clearAllOrdersFromFirestore(): Promise<boolean> {
+export async function clearAllOrdersFromFirestore(): Promise<{ success: boolean; error?: string }> {
   try {
     const ordersCol = collection(db, ORDERS_COLLECTION);
     const snapshot = await getDocs(ordersCol);
     const deletePromises = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
     await Promise.all(deletePromises);
     console.log('🗑️ [FIRESTORE] All orders cleared.');
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.warn('Failed to clear orders from Firestore:', err);
-    return false;
+    return { success: false, error: err?.message };
+  }
+}
+
+/**
+ * Manually fetches all orders directly from Firestore
+ */
+export async function fetchOrdersFromFirestore(): Promise<Order[]> {
+  try {
+    const ordersCol = collection(db, ORDERS_COLLECTION);
+    const snapshot = await getDocs(ordersCol);
+    const ordersList: Order[] = snapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
+      return normalizeOrder({ id: docSnap.id, ...data });
+    });
+
+    ordersList.sort((a, b) => {
+      const timeA = (a as any).timestamp || (a as any).createdAt || a.id;
+      const timeB = (b as any).timestamp || (b as any).createdAt || b.id;
+      return String(timeB).localeCompare(String(timeA));
+    });
+
+    return ordersList;
+  } catch (err) {
+    console.warn('Failed to fetch orders from Firestore:', err);
+    return [];
   }
 }

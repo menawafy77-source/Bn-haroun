@@ -26,6 +26,7 @@ import { FacebookBanner } from './components/FacebookBanner';
 import { supabase } from './supabaseClient';
 import { normalizeOrder } from './utils/orderUtils';
 import {
+  fetchOrdersFromDb,
   saveOrderToDb,
   updateOrderStatusInDb,
   deleteOrderFromDb,
@@ -37,8 +38,9 @@ import {
   updateOrderStatusInFirestore,
   deleteOrderFromFirestore,
   clearAllOrdersFromFirestore,
-  fetchFirestoreOrders,
+  fetchOrdersFromFirestore,
 } from './services/firestoreOrderService';
+import { testFirestoreConnection } from './firebase';
 
 import {
   Product,
@@ -101,13 +103,15 @@ export default function App() {
     }
   });
 
+  // Cloud Firestore Sync Status State
+  const [firestoreStatus, setFirestoreStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+  const [firestoreError, setFirestoreError] = useState<string>('');
+
   // Modals & Drawers Visibility
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isOwnerDashboardOpen, setIsOwnerDashboardOpen] = useState(false);
-  const [syncError, setSyncError] = useState('');
-  const [isCloudPending, setIsCloudPending] = useState(true);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
 
@@ -138,23 +142,50 @@ export default function App() {
     }
   }, [orders]);
 
-  // Firestore is the only authority for orders. Local data is just a display cache.
+  // 1. Google Cloud Firestore Real-Time Cross-Device Sync (Global across all phones)
   useEffect(() => {
-    return subscribeToFirestoreOrders(
-      setOrders,
-      (error) => {
-        console.error('Order synchronization failed:', error);
-        setSyncError('تعذرت مزامنة الطلبات. تحقق من اتصال الإنترنت وإعدادات وصلاحيات Firestore للقاعدة الافتراضية.');
-      },
-      (fromCache) => setIsCloudPending(fromCache),
-    );
-  }, []);
+    testFirestoreConnection().then((res) => {
+      if (res.ok) {
+        setFirestoreStatus('connected');
+        setFirestoreError('');
+      } else {
+        setFirestoreStatus('error');
+        setFirestoreError(res.error || 'تعذر الاتصال بقاعدة بيانات الفايربيس');
+      }
+    });
 
-  const requireCloudWrite = async (operation: Promise<boolean>): Promise<boolean> => {
-    const saved = await operation;
-    setSyncError(saved ? '' : 'لم يتم حفظ التغيير سحابياً. تحقق من اتصال الإنترنت وصلاحيات Firestore ثم أعد المحاولة.');
-    return saved;
-  };
+    // Sync any past local orders up to Firestore so other phones see them immediately
+    try {
+      const saved = localStorage.getItem('haroun_orders');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach((ord) => {
+            saveOrderToFirestore(normalizeOrder(ord));
+          });
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    const unsubscribe = subscribeToFirestoreOrders(
+      (cloudOrders) => {
+        setFirestoreStatus('connected');
+        setFirestoreError('');
+        // Direct assignment from real-time Firestore database
+        setOrders(cloudOrders);
+      },
+      (err) => {
+        setFirestoreStatus('error');
+        setFirestoreError(err?.message || 'خطأ في الاتصال بسحابة الفايربيس');
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
@@ -261,9 +292,6 @@ export default function App() {
   // Order Success Handler (تحديث الطلبات وحفظها فورا لظهورها في المكتب والمزامنة مع قاعدة البيانات)
   const handleOrderSuccess = async (rawOrder: Order) => {
     const newOrder = normalizeOrder(rawOrder);
-    if (!await requireCloudWrite(saveOrderToFirestore(newOrder))) {
-      throw new Error('تعذر إرسال الطلب إلى المتجر. لم يتم تفريغ السلة؛ يرجى إعادة المحاولة.');
-    }
 
     // 1. حساب نقاط الولاء
     const hasReward = newOrder.items.some((item) => item.isLoyaltyReward);
@@ -289,6 +317,9 @@ export default function App() {
 
     // 3. تصفير السلة
     setCartItems([]);
+
+    // 4. الحفظ فوراً في قاعدة بيانات Google Cloud Firestore العالمية المشتركة لجميع الهواتف
+    await saveOrderToFirestore(newOrder);
 
     // 5. الحفظ أيضاً في قاعدة بيانات السيرفر المحلية (/api/orders) للاحتياط
     saveOrderToDb(newOrder);
@@ -326,17 +357,12 @@ export default function App() {
 
   // Owner Order Management Handlers
   const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
-    const currentOrder = orders.find((order) => order.id === orderId);
-    const creditPoints = newStatus === 'delivered' && !currentOrder?.pointsCredited &&
-      (currentOrder?.pointsEarned || 0) > 0;
-    const pointsCredited = creditPoints ? true : currentOrder?.pointsCredited;
-    if (!await requireCloudWrite(updateOrderStatusInFirestore(orderId, newStatus, pointsCredited))) return;
-    if (creditPoints && currentOrder) setLoyaltyPoints((pts) => pts + currentOrder.pointsEarned);
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
           // When Mr. Tharwat marks an order delivered or confirmed, credit the points if not already credited
           if (newStatus === 'delivered' && !ord.pointsCredited && (ord.pointsEarned || 0) > 0) {
+            setLoyaltyPoints((pts) => pts + ord.pointsEarned);
             return { ...ord, status: newStatus, pointsCredited: true };
           }
           return { ...ord, status: newStatus };
@@ -346,10 +372,11 @@ export default function App() {
     );
 
     // Update in Firestore across all devices
+    updateOrderStatusInFirestore(orderId, newStatus);
     // Update server database
-    updateOrderStatusInDb(orderId, newStatus, pointsCredited);
+    updateOrderStatusInDb(orderId, newStatus);
     try {
-      await supabase.from('orders').update({ status: newStatus, pointsCredited }).eq('id', orderId);
+      await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
     } catch {
       // ignore
     }
@@ -357,25 +384,24 @@ export default function App() {
 
   // Direct points confirmation by Mr. Tharwat ("النقاط متتضفش لحساب العميل غير لما الطلب يتاكد من استاذ ثروت")
   const handleConfirmOrderPoints = async (orderId: string) => {
-    if (!await requireCloudWrite(updateOrderStatusInFirestore(orderId, 'delivered', true))) return;
-    const currentOrder = orders.find((order) => order.id === orderId);
-    if (currentOrder && !currentOrder.pointsCredited && currentOrder.pointsEarned > 0) {
-      setLoyaltyPoints((pts) => pts + currentOrder.pointsEarned);
-    }
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
+          if (!ord.pointsCredited && (ord.pointsEarned || 0) > 0) {
+            setLoyaltyPoints((pts) => pts + ord.pointsEarned);
             return {
               ...ord,
               status: 'delivered',
               pointsCredited: true,
             };
+          }
         }
         return ord;
       })
     );
 
     // Update in Firestore across all devices
+    updateOrderStatusInFirestore(orderId, 'delivered', true);
     // Update server database
     updateOrderStatusInDb(orderId, 'delivered', true);
     try {
@@ -386,8 +412,8 @@ export default function App() {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!await requireCloudWrite(deleteOrderFromFirestore(orderId))) return;
     setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
+    deleteOrderFromFirestore(orderId);
     deleteOrderFromDb(orderId);
     try {
       await supabase.from('orders').delete().eq('id', orderId);
@@ -397,8 +423,8 @@ export default function App() {
   };
 
   const handleClearAllOrders = async () => {
-    if (!await requireCloudWrite(clearAllOrdersFromFirestore())) return;
     setOrders([]);
+    clearAllOrdersFromFirestore();
     clearAllOrdersFromDb();
     try {
       localStorage.setItem('haroun_orders', JSON.stringify([]));
@@ -410,8 +436,8 @@ export default function App() {
 
   const handleAddManualOrder = async (rawOrder: Order) => {
     const newOrder = normalizeOrder(rawOrder);
-    if (!await requireCloudWrite(saveOrderToFirestore(newOrder))) return;
-    setOrders((prev) => [newOrder, ...prev.filter((order) => order.id !== newOrder.id)]);
+    setOrders((prev) => [newOrder, ...prev]);
+    saveOrderToFirestore(newOrder);
     saveOrderToDb(newOrder);
 
     try {
@@ -422,12 +448,14 @@ export default function App() {
   };
 
   const handleRefreshOrders = async () => {
-    try {
-      setOrders(await fetchFirestoreOrders());
-      setSyncError('');
-    } catch (error) {
-      console.error('Firestore refresh failed:', error);
-      setSyncError('تعذر تحديث الطلبات من Firestore. تحقق من الاتصال وصلاحيات القاعدة الافتراضية.');
+    const cloudOrders = await fetchOrdersFromFirestore();
+    if (cloudOrders.length > 0) {
+      setOrders(cloudOrders);
+    } else {
+      const serverOrders = await fetchOrdersFromDb();
+      if (serverOrders.length > 0) {
+        setOrders(serverOrders);
+      }
     }
   };
 
@@ -481,11 +509,6 @@ export default function App() {
       />
 
       <main className="flex-1">
-        {(syncError || isCloudPending) && (
-          <div role={syncError ? 'alert' : 'status'} className="bg-amber-50 p-3 text-center text-sm text-amber-900" dir="rtl">
-            {syncError || 'جارٍ الاتصال بقاعدة الطلبات؛ البيانات المحلية قد لا تكون محدثة.'}
-          </div>
-        )}
         {/* 1. Hero Section (with video embedded at the top) */}
         <HeroSection
           onExploreProducts={() => handleNavigate('products')}
@@ -537,6 +560,8 @@ export default function App() {
             onDeleteOrder={handleDeleteOrder}
             onLockDashboard={handleLockOwnerDashboard}
             onRefreshOrders={handleRefreshOrders}
+            firestoreStatus={firestoreStatus}
+            firestoreError={firestoreError}
           />
         )}
 
@@ -628,6 +653,8 @@ export default function App() {
         onAddManualOrder={handleAddManualOrder}
         onLockDashboard={handleLockOwnerDashboard}
         onRefreshOrders={handleRefreshOrders}
+        firestoreStatus={firestoreStatus}
+        firestoreError={firestoreError}
       />
 
       {/* Floating Shortcut for Shop Owner (Appears after first unlock) */}

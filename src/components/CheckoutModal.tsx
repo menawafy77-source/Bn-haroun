@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Order, CartItem } from '../types';
 import { normalizeOrder } from '../utils/orderUtils';
+import { saveOrderToDb } from '../services/apiOrderService';
+import { saveOrderToFirestore } from '../services/firestoreOrderService';
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
   subtotal: number;
-  onOrderSuccess: (order: Order) => Promise<void>;
+  onOrderSuccess: (order: Order) => void;
 }
 
 type PaymentMethod = 'cash' | 'vodafone_cash' | 'instapay';
@@ -32,7 +34,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
     setFormError('');
 
     // 1. التحقق من رقم التحويل في حالة الدفع الإلكتروني
@@ -41,7 +42,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
-    const orderId = `ORD-${crypto.randomUUID()}`;
+    setIsSubmitting(true);
+
+    const orderId = `ORD-${Date.now()}`;
     const paymentLabel = 
       paymentMethod === 'vodafone_cash' ? 'فودافون كاش' :
       paymentMethod === 'instapay' ? 'إنستاباي' : 'الدفع عند الاستلام';
@@ -66,23 +69,35 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       total: subtotal,
       subtotal,
       paymentMethod: paymentLabel,
-      notes: paymentMethod !== 'cash' ? `رقم التحويل: ${transferNumber}` : undefined,
+      notes: paymentMethod !== 'cash' ? `رقم التحويل: ${transferNumber}` : '',
       pointsEarned,
       pointsCredited: false,
       status: 'placed',
       date: new Date().toLocaleString('ar-EG'),
     });
 
-    // Confirm the single cloud write before showing success or clearing the cart.
-    setIsSubmitting(true);
-    try {
-      await onOrderSuccess(newOrder);
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'تعذر حفظ الطلب. يرجى إعادة المحاولة.');
-      return;
-    } finally {
+    // 4. 🔥 الحفظ المباشر في سحابة Google Firestore المركزية المشتركة بين كل الهواتف 🔥
+    const firestoreResult = await saveOrderToFirestore(newOrder);
+    if (!firestoreResult.success) {
       setIsSubmitting(false);
+      setFormError(`تعذر حفظ الطلب في السحابة المركزية (Firestore): ${firestoreResult.error || 'يرجى التحقق من اتصال الإنترنت'}`);
+      return;
     }
+
+    // 5. حفظ نسخة محلية احتياطية وعلى السيرفر الداخلي
+    try {
+      const savedOrders = localStorage.getItem('haroun_orders');
+      const currentOrders = savedOrders ? JSON.parse(savedOrders) : [];
+      const updatedOrders = [newOrder, ...currentOrders.filter((o: any) => o.id !== newOrder.id)];
+      localStorage.setItem('haroun_orders', JSON.stringify(updatedOrders));
+    } catch {
+      // ignore
+    }
+    saveOrderToDb(newOrder);
+
+    // 6. إبلاغ التطبيق بالطلب الجديد لتحديث الشاشة فوراً
+    onOrderSuccess(newOrder);
+    setIsSubmitting(false);
 
     // 6. تجهيز فتح الواتساب
     let message = `مرحباً بن هارون، أرغب في تأكيد طلبي:%0A` +
@@ -125,7 +140,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <h2 className="text-xl font-bold text-[#4A2C11]">
             {successInfo ? 'تم إرسال الطلب للمكتب بنجاح!' : 'إتمام الطلب وتأكيد الشراء'}
           </h2>
-          <button disabled={isSubmitting} onClick={() => { setSuccessInfo(null); onClose(); }} className="text-gray-500 hover:text-red-600 font-bold text-lg">✕</button>
+          <button onClick={() => { setSuccessInfo(null); onClose(); }} className="text-gray-500 hover:text-red-600 font-bold text-lg">✕</button>
         </div>
 
         {successInfo ? (
@@ -275,9 +290,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full bg-[#4A2C11] hover:bg-[#3E2723] text-[#F3C07B] font-bold py-3 px-4 rounded-xl shadow-lg transition-all text-center"
+              disabled={isSubmitting}
+              className={`w-full bg-[#4A2C11] hover:bg-[#3E2723] text-[#F3C07B] font-bold py-3 px-4 rounded-xl shadow-lg transition-all text-center flex items-center justify-center gap-2 cursor-pointer ${
+                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
             >
-              تأكيد الطلب وإرسال عبر الواتساب ☕
+              {isSubmitting ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin"></i>
+                  <span>جاري تسجيل الطلب سحابياً...</span>
+                </>
+              ) : (
+                <span>تأكيد الطلب وإرسال عبر الواتساب ☕</span>
+              )}
             </button>
           </div>
         </form>
