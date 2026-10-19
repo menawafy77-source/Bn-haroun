@@ -28,7 +28,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [transferNumber, setTransferNumber] = useState('');
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copiedType, setCopiedType] = useState<'voda' | 'insta' | null>(null);
   const [successInfo, setSuccessInfo] = useState<{ orderId: string; whatsappUrl: string; name: string } | null>(null);
+
+  const handleCopyNumber = (num: string, type: 'voda' | 'insta') => {
+    try {
+      navigator.clipboard.writeText(num);
+      setCopiedType(type);
+      setTimeout(() => setCopiedType(null), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -267,22 +278,88 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           </div>
 
-          {/* خانة رقم التحويل تظهر فقط في حالة اختيار الدفع الإلكتروني */}
-          {paymentMethod !== 'cash' && (
-            <div className="bg-[#FDF8F0] p-3 rounded-xl border border-[#C5A059]/40 animate-fadeIn">
-              <label className="block text-xs font-bold text-[#8C6239] mb-1">
-                {paymentMethod === 'vodafone_cash' ? 'رقم محفظة فودافون المحول منها أو رقم عملية التحويل' : 'رقم مرجع التحويل (InstaPay Reference)'} <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={transferNumber}
-                onChange={(e) => setTransferNumber(e.target.value)}
-                placeholder="أدخل رقم التحويل هنا..."
-                className="w-full p-2.5 rounded-xl border border-[#C5A059] bg-white focus:outline-none text-sm font-bold"
-              />
-              <p className="text-[11px] text-gray-500 mt-1">
-                * تحويل المبلغ على رقم المحمصة: <span className="font-bold text-[#4A2C11]">01275075046</span>
+          {/* تفاصيل وخانة التحويل لفودافون كاش */}
+          {paymentMethod === 'vodafone_cash' && (
+            <div className="bg-red-50/80 p-3.5 rounded-xl border border-red-200 animate-fadeIn space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-red-800 flex items-center gap-1.5">
+                  <i className="fa-solid fa-mobile-screen-button text-red-600"></i>
+                  <span>رقم محفظة فودافون كاش:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopyNumber('01002563614', 'voda')}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-red-700 hover:bg-red-800 text-white flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+                >
+                  <i className={`fa-solid ${copiedType === 'voda' ? 'fa-check text-green-300' : 'fa-copy'}`}></i>
+                  <span>{copiedType === 'voda' ? 'تم النسخ!' : 'نسخ الرقم'}</span>
+                </button>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-red-200 flex items-center justify-between shadow-xs">
+                <span className="font-mono font-extrabold text-base sm:text-lg text-red-700 tracking-wider">01002563614</span>
+                <span className="text-[11px] bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded-full">فودافون كاش</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#8C6239] mb-1">
+                  رقم المحفظة المحول منها أو رقم عملية التحويل <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={transferNumber}
+                  onChange={(e) => setTransferNumber(e.target.value)}
+                  placeholder="مثال: 010xxxxxxxx أو رقم العملية..."
+                  className="w-full p-2.5 rounded-xl border border-red-300 bg-white focus:outline-none text-sm font-bold"
+                />
+              </div>
+
+              <p className="text-[11px] text-gray-600">
+                * يرجى تحويل مبلغ <strong className="text-red-700 font-bold">{subtotal} ج.م</strong> على رقم فودافون كاش أعلاه لتأكيد طلبك.
+              </p>
+            </div>
+          )}
+
+          {/* تفاصيل وخانة التحويل لإنستاباي */}
+          {paymentMethod === 'instapay' && (
+            <div className="bg-purple-50/80 p-3.5 rounded-xl border border-purple-200 animate-fadeIn space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                  <i className="fa-solid fa-bolt text-purple-700"></i>
+                  <span>رقم حساب إنستاباي (InstaPay):</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopyNumber('01206027305', 'insta')}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-purple-800 hover:bg-purple-900 text-white flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+                >
+                  <i className={`fa-solid ${copiedType === 'insta' ? 'fa-check text-green-300' : 'fa-copy'}`}></i>
+                  <span>{copiedType === 'insta' ? 'تم النسخ!' : 'نسخ الرقم'}</span>
+                </button>
+              </div>
+
+              <div className="bg-white p-2.5 rounded-lg border border-purple-200 flex items-center justify-between shadow-xs">
+                <span className="font-mono font-extrabold text-base sm:text-lg text-purple-800 tracking-wider">01206027305</span>
+                <span className="text-[11px] bg-purple-100 text-purple-900 font-bold px-2 py-0.5 rounded-full">إنستاباي</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#8C6239] mb-1">
+                  رقم مرجع التحويل أو اسم الحساب المحول منه <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={transferNumber}
+                  onChange={(e) => setTransferNumber(e.target.value)}
+                  placeholder="أدخل رقم المرجع (Reference) أو اسم الحساب..."
+                  className="w-full p-2.5 rounded-xl border border-purple-300 bg-white focus:outline-none text-sm font-bold"
+                />
+              </div>
+
+              <p className="text-[11px] text-gray-600">
+                * يرجى تحويل مبلغ <strong className="text-purple-800 font-bold">{subtotal} ج.م</strong> على رقم إنستاباي أعلاه لتأكيد طلبك.
               </p>
             </div>
           )}
