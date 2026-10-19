@@ -222,7 +222,7 @@ export const OwnerDashboardModal: React.FC<OwnerDashboardModalProps> = ({
       image:
         manualProduct === 'haroun-sada'
           ? '/product_haroun_sada_1791931204378.jpg'
-          : '/product_haroun_mehaweg_1791931205594.jpg',
+          : '/bn_haroun_mohaug.jpg',
     };
 
     const newOrder: Order = {

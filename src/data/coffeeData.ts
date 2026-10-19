@@ -42,7 +42,7 @@ export const PRODUCTS: Product[] = [
     subtitle: 'توليفة فاخرة مع حبهان أخضر هندي أصيل ومستكة يونانية وقرنفل بلدي',
     description: 'خلطة بن هارون السرية التي تجمع بين حبوب البن الممتازة وأندر أنواع الحبهان الأخضر والمستكة والقرنفل بنسب دقيقة وموزونة تعيد إليك أصالة مجالس القهوة العربية وعراقة الدكاكين التراثية.',
     category: 'محوج',
-    image: '/product_haroun_mehaweg_1791931205594.jpg',
+    image: '/bn_haroun_mohaug.jpg',
     sizes: [
       { weight: '100g', weightLabel: '100 جرام', price: 85 },
       { weight: '250g', weightLabel: '250 جرام', price: 200, popular: true }

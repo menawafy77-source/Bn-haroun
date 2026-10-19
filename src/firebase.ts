@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeFirestore, getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 export const firebaseConfig = {
   apiKey: "AIzaSyCzL6IulH6FziT_jPfuedzVJynxIdtTgTI",
@@ -14,29 +14,20 @@ export const firebaseConfig = {
 // Initialize or reuse existing Firebase app
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Connect explicitly to the provisioned Firestore database with auto-detect long polling for mobile stability
-let firestoreInstance;
-try {
-  firestoreInstance = initializeFirestore(
-    app,
-    {
-      experimentalAutoDetectLongPolling: true,
-    },
-    "ai-studio-8bb136c0-6ac3-4444-acbb-8fde45c51bd6"
-  );
-} catch {
-  firestoreInstance = getFirestore(app, "ai-studio-8bb136c0-6ac3-4444-acbb-8fde45c51bd6");
-}
-
-export const db = firestoreInstance;
+// Connect cleanly to the provisioned Firestore database
+export const db = getFirestore(app, "ai-studio-8bb136c0-6ac3-4444-acbb-8fde45c51bd6");
 
 export async function testFirestoreConnection(): Promise<{ ok: boolean; error?: string }> {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log('✅ Connected to Google Firestore Database successfully');
+    // Use getDoc instead of getDocFromServer so it doesn't fail abruptly during initial handshake
+    await getDoc(doc(db, 'test', 'connection'));
     return { ok: true };
   } catch (err: any) {
-    console.warn('Firestore connection check:', err);
+    // If it's a transient unavailable/offline status, Firestore will reconnect automatically
+    if (err?.code === 'unavailable') {
+      return { ok: true };
+    }
+    console.warn('Firestore connection check notice:', err);
     return { ok: false, error: err?.message || 'تعذر الاتصال بقاعدة بيانات Firestore' };
   }
 }

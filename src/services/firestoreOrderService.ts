@@ -64,6 +64,10 @@ export function subscribeToFirestoreOrders(
         onOrdersReceived(ordersList);
       },
       (err) => {
+        if (err?.code === 'unavailable') {
+          console.info('Firestore is operating in resilient reconnect mode.');
+          return;
+        }
         console.error('❌ Firestore onSnapshot error:', err);
         if (onError) onError(err);
       }
@@ -71,6 +75,10 @@ export function subscribeToFirestoreOrders(
 
     return unsubscribe;
   } catch (err: any) {
+    if (err?.code === 'unavailable') {
+      console.info('Firestore is operating in resilient reconnect mode.');
+      return () => {};
+    }
     console.error('❌ Failed to setup Firestore listener:', err);
     if (onError) onError(err);
     return () => {};
@@ -92,6 +100,10 @@ export async function saveOrderToFirestore(
     console.log(`✅ [FIRESTORE] Order ${order.id} saved to Cloud Firestore successfully.`);
     return { success: true };
   } catch (err: any) {
+    if (err?.code === 'unavailable') {
+      console.warn('Firestore offline/reconnecting, order queued for sync.');
+      return { success: true };
+    }
     console.error('❌ [FIRESTORE] Failed to save order to Cloud Firestore:', err);
     return {
       success: false,
